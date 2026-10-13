@@ -1,0 +1,150 @@
+[project]
+name = "mimic-bhc-generation"
+version = "0.1.0"
+description = "Generation, scoring, and analysis of Brief Hospital Courses from MIMIC-III with small on-device models"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [{ name = "Christian Garbin" }]
+dependencies = [
+    "bert-score",
+    "duckdb",
+    "gguf",
+    # 3.6 for the legend `alignment` keyword, used by concept_position_map.py.
+    "matplotlib>=3.6",
+    "mimic-bhc-extraction @ git+https://github.com/fau-masters-collected-works-cgarbin/mimic-bhc-extraction.git",
+    "numpy",
+    "openai",
+    "pandas",
+    "python-dotenv>=1.2.2",
+    "pyyaml",
+    "rouge-score",
+    "scispacy>=0.6.2",
+    # en_core_sci_md is declared so its spacy<3.8 cap participates in
+    # resolution. scispaCy 0.6.2 allows spacy<3.9, so without the model in the
+    # dependency set the resolver picks spacy 3.8.x and the model fails to load.
+    # The model wheel is hosted on AI2's S3, not PyPI.
+    "en-core-sci-md @ https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_md-0.5.4.tar.gz",
+    "streamlit",
+    "transformers>=5.6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    { include-group = "lint" },
+    { include-group = "types" },
+    { include-group = "test" },
+    "pre-commit",
+]
+lint = ["ruff"]
+# pandas-stubs to silence DataFrame type checking warnings
+types = ["pandas-stubs>=2.3.3,<3"]
+test = ["pytest", "pytest-cov"]
+
+[tool.uv]
+default-groups = ["dev", "test"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mimic_data_prep", "src/bhc_experiment"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D",      # pydocstyle
+    "COM812", # trailing comma (conflicts with formatter)
+    "ISC001", # implicit string concat (conflicts with formatter)
+    "PERF401", # explicit loops are allowed; readability wins over comprehension-only style
+    "PERF403", # explicit dict-building loops are allowed; readability wins over dict comprehensions
+    "CPY001",  # the LICENSE file covers the repo, per-file notices add nothing
+    "PLR0917", # PLR0913 already polices parameter count, this repeats it for positional ones
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",    # assert allowed in tests
+    "PLR2004", # magic values allowed in tests
+    "ANN",     # annotations optional in tests
+    "PD901",   # generic df name is fine in tests
+    "PD010",   # test helpers use .pivot() to mirror production behavior
+    "S608",    # SQL injection false positives (DuckDB read_csv_auto on local files)
+    "PLC0415", # imports inside fixtures/tests for test isolation
+    "PLR0913", # synthetic-data helpers carry many parameters encoding the statistical model structure
+    "S106",    # token_stratum kwarg trips the hardcoded-password heuristic
+    "PD008",   # tests mutate single cells via .at[] to keep object dtypes intact
+]
+"src/bhc_experiment/evaluator.py" = [
+    "BLE001",    # evaluate() intentionally catches all exceptions to skip failed metrics
+    "PLC0415",   # lazy imports in factories avoid loading torch/openai at module import time
+]
+"src/bhc_experiment/stats.py" = [
+    "PLR0913",   # paired_bootstrap_ci has many parameters by the nature of the statistical API
+    "PD010",     # .pivot() is intentional; it errors on duplicate (pair, contrast) keys which is the check we want
+]
+"src/bhc_experiment/**/*.py" = [
+    "S608",    # SQL injection false positives (DuckDB read_csv_auto on local files)
+]
+"src/mimic_data_prep/mimic.py" = [
+    "S608",    # SQL injection false positives (DuckDB read_csv_auto on local files)
+    "ERA001",  # pandas equivalents in comments are documentation, not dead code
+]
+"src/mimic_data_prep/cohort.py" = [
+    "S608",    # SQL injection false positives (DuckDB read_csv_auto on local files)
+]
+"src/mimic_data_prep/spot_check_queries.py" = [
+    "S311",    # random.Random used for deterministic sampling, not crypto
+    "S608",    # SQL injection false positives (DuckDB read_csv_auto on local files)
+    "PLR0913", # query functions have many parameters for testability (paths not imported)
+]
+"src/mimic_data_prep/sampling.py" = [
+    "PLR0913", # write_cohort_file has many parameters (all needed for provenance metadata)
+]
+"app/**/*.py" = [
+    "INP001",  # app scripts are standalone, not packages
+    "T201",    # print allowed in app scripts
+    "ANN",     # annotations optional in app scripts
+    "S608",    # SQL injection false positives (DuckDB read_csv_auto on local files)
+    "ERA001",  # pandas equivalents in comments are documentation, not dead code
+    "PLR0915", # Streamlit apps are sequential layout code in one script
+    "E501",    # embedded markdown (tables, prose) can't wrap; ruff-format handles code line length
+]
+"scripts/quickumls_bridge.py" = [
+    "PLC0415",  # quickumls and Yim's modules are importable only after sys.path is set, on the sibling interpreter
+]
+"scripts/**/*.py" = [
+    "INP001",  # scripts are standalone, not packages
+    "T201",    # print is the output mechanism
+    "ANN",     # annotations optional in scripts
+    "S603",    # subprocess calls use hardcoded commands, not user input
+    "S607",    # partial executable paths (git, uv) are safe in scripts
+    "S608",    # SQL injection false positives (DuckDB read_csv_auto on local files)
+    "ERA001",  # pandas equivalents in comments are documentation, not dead code
+    "PLR0915", # analysis scripts are sequential steps in one main()
+    "PLR2004", # magic values in sanity checks and thresholds are readable inline
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "app", "scripts/pipeline", "scripts/decision_analysis", "scripts/setup"]
+markers = [
+    "slow: marks tests requiring network or model download (deselect with '-m \"not slow\"')",
+    "quickumls_index: marks tests requiring a licensed UMLS index and the sibling bridge environment; skipped where either is absent",
+]
+
+[tool.coverage.run]
+branch = true

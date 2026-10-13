@@ -1,0 +1,43 @@
+# A plain `pre-commit install` wires both hook types, so a fresh clone gets the
+# pre-push hook without extra flags.
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff (lint)
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff (format)
+        entry: uv run ruff format
+        language: system
+        types: [python]
+      - id: pytest-fast
+        name: pytest (fast)
+        entry: uv run pytest -q -m "not slow"
+        language: system
+        pass_filenames: false
+        files: \.(py|ya?ml)$
+        stages: [pre-commit]
+      - id: pytest-full
+        name: pytest (full suite)
+        entry: uv run pytest -q
+        language: system
+        pass_filenames: false
+        files: \.(py|ya?ml)$
+        stages: [pre-push]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+        # uv.lock may grow large but must always be committed to keep the uv environment reproducible.
+        exclude: ^uv\.lock$
