@@ -91,9 +91,7 @@ CONCEPT_SPACES: dict[str, dict] = {
     # in the literature. It tests whether the coverage framework's reading
     # survives a wider space. Procedures
     # makes lab-test names count as concepts on the input side, so the ceiling,
-    # observed recall, and input utilization move together under it. The extra
-    # TUIs must equal medcon_group_coverage.SEMANTIC_GROUP_TUIS["PROC"] (pinned by
-    # a test).
+    # observed recall, and input utilization move together under it.
     "scispacy-plus-procedures": {
         **SCISPACY_CLINICAL,
         "name": "scispacy-plus-procedures",
