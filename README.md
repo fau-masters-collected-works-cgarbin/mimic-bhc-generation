@@ -1,14 +1,12 @@
 # Brief Hospital Course (BHC) generation
 
-Experiment infrastructure for Brief Hospital Course (BHC) generation from MIMIC-III admission records.
+Experiment infrastructure for Brief Hospital Course (BHC) generation from [MIMIC-III](https://physionet.org/content/mimiciii/1.4/) admission records.
 
 This project uses small open-weight models (Gemma 4 E4B, Qwen3.5-4B, and Llama 3.2 3B, 4-bit quantized) for on-device BHC generation. It generates BHCs for admission ranging from 4K to 112K input tokens to test how the models perform with small and long contexts.
 
 ## Setup
 
-First-time setup is one flow: prerequisites, Python dependencies, Hugging Face tokenizers, BERTScore and scispaCy/UMLS models, and the local llama.cpp server. Run it once before the Usage steps below. See [docs/setup.md](docs/setup.md).
-
-Reproducing the experiments takes a PhysioNet credentialed account and a signed MIMIC-III Data Use Agreement. The reference MEDCON scorer also takes a UMLS Metathesaurus License.
+See [docs/setup.md](docs/setup.md).
 
 ## Usage
 
@@ -39,15 +37,14 @@ uv run pytest tests/ -v
 
 Experiments need a representative subset of MIMIC-III admissions with enough clinical data and reliably extracted BHC ground truth.
 
-Cohort creation is three stages:
+Cohort creation is two stages:
 
-1. The filtered pool has every admission passing the eligibility and token budget filters. It is the reusable record for admission-level analysis.
+1. The filtered pool has every admission passing the eligibility and token budget filters.
 1. The cohort is the stratified sample drawn from the filtered pool.
-1. The audit reports the per-stratum covariate balance and flags strata where any major covariate level falls below a 30% representation floor.
 
 #### Stage 1: Build the filtered pool
 
-The pool build applies the eligibility funnel (MetaVision, BHC quality, LOS >= 3, charting days >= 3, BHC <= 15,000 chars, safety nets). It then tokenizes each admission's record text under all three model tokenizers (Llama 3.2 3B, Qwen3.5-4B, Gemma 4 E4B) and keeps the largest of the three counts. Admissions whose max count exceeds 112K are dropped. The smallest context window across the three models is 128K. The 112K cap is 87.5% of that, leaving ~16K of headroom for the prompt template, the structured admission summary, and the BHC output.
+The pool build applies the eligibility funnel (MetaVision, BHC quality, LOS >= 3, charting days >= 3, BHC <= 15,000 chars, safety nets). It then tokenizes each admission's record text under all three model tokenizers (Llama 3.2 3B, Qwen3.5-4B, Gemma 4 E4B) and keeps the largest of the three counts. Admissions whose max count exceeds 112K are dropped. The smallest context window across the three models is 128K. The 112K cap is 87.5% of that, leaving ~16K of headroom for the prompt template, and the BHC output.
 
 ```bash
 uv run python scripts/pipeline/build_filtered_pool.py
@@ -69,7 +66,7 @@ The output is saved to the results repository at `../phd-dissertation-experiment
 
 The sampler stratifies admissions across seven token-count strata at 4K, 8K, 16K, 32K, 64K, 96K, and 112K, then draws per-stratum (25 admissions each in the 4K, 8K, and 16K strata, 20 in 32K, 15 in 64K, 12 in 96K, and 10 in 112K). The larger strata have fewer admissions because of the quadratic cost of prefill at 96K-112K.
 
-The token count is the maximum of the three tokenizers' counts per admission to ensure that each admission can be processed by any of the three models. The allocation rationale and per-stratum compute budget are documented in the dissertation.
+The token count is the maximum of the three tokenizers' counts per admission to ensure that each admission can be processed by any of the three models.
 
 Very short clinical records are rare in the filtered pool, so the 4K stratum cannot be adequately populated. The sampler logs a warning and takes all available 4K admissions in that case.
 
@@ -105,7 +102,7 @@ The preparation script creates these files:
 - Concepts: `CONCEPTS_DIR/<extractor>-<config-sha>.jsonl`, for example `scispacy-b42bfe475bbb.jsonl`, where the suffix is the first 12 hex of the extractor config's SHA-256. The suffix changes with the extractor's settings and library versions, so a scispaCy upgrade gets a new file instead of reusing stale concepts.
 - Record concepts: `PREPARED_DIR/<cohort>-dedup-<method>.record-concepts-<extractor>-<config-sha>.jsonl`. The oracle selects records from it. The analyses count concept mentions from it.
 
-Preparation, generation, and scoring refuse to run on a dirty git tree and record the commit they ran at.
+To keep results reproducible, preparation, generation, and scoring refuse to run on a dirty git tree and record the commit they ran at.
 
 ### 3. Spot-check the frozen inputs
 
@@ -119,7 +116,7 @@ Review per-admission BHC, token count, and day-by-category note grid.
 uv run streamlit run app/spot_check.py
 ```
 
-Use the app to review the 16 cases:
+Use the app to review the selected 16 cases:
 
 - 14 cases from the `(token_stratum, bhc_category)` grid: one admission per cell across seven token strata and two BHC formats.
 - One extra case each at 96K and 112K. These two strata sit closest to the 112K pool budget, so the budget leaves the least headroom for prompt-size or tokenizer-count drift.
