@@ -4,33 +4,6 @@ Experiment infrastructure for Brief Hospital Course (BHC) generation from MIMIC-
 
 This project uses small open-weight models (Gemma 4 E4B, Qwen3.5-4B, and Llama 3.2 3B, 4-bit quantized) for on-device BHC generation. It generates BHCs for admission ranging from 4K to 112K input tokens to test how the models perform with small and long contexts.
 
-## Scope
-
-The experiments compare two ways of feeding an admission to the model: all of its records, or an oracle's selection of them.
-
-| Run | Question it answers | Input | Context and token cost |
-| --- | --- | --- | --- |
-| **All records** | What is each model's best quality without retrieval, and how far does long context keep paying off? | Every prepared record, in chronological order. | Every model is served with a 128K window. Highest token cost. Derives the working budget: the largest stratum a model runs within the feasibility limits. |
-| **Oracle selection, radius N** | Would a perfect retriever beat feeding all records? Does adding the records around each pick (depth) beat the picks alone (breadth)? | The records that mention a reference concept (the anchors), plus the N records on each side of each anchor. Long strata (32K and up) only. | The selected records' tokens. |
-
-All-records runs cover seven admission-size strata at 4K, 8K, 16K, 32K, 64K, 96K, and 112K, with fewer admissions in the larger strata because they take longer to run. Short admissions are rare in the pool, so the realized 4K stratum falls short of its target and the cohort has 116 admissions. Per-stratum targets are under [Stage 2](#stage-2-create-the-cohort).
-
-The dissertation calls the all-records runs Case 0.
-
-The experiment mechanics and the contributions are documented in the dissertation.
-
-## Overview
-
-The pipeline runs in order: verify prerequisites, create a cohort, prepare its inputs, spot-check the prepared data, run experiments, and view results.
-
-Preparation (step 2) is the one place the experiment data is created from the MIMIC-III records. It filters and deduplicates the records once, in a fixed order, then extracts their concepts over that frozen text. The experiment pipeline uses the prepared data, so every experiment consumes the same data.
-
-Preparation produces three artifacts:
-
-- **Prepared-input artifact**: the filtered, deduplicated records (full fields) per admission.
-- **Concept artifact**: UMLS concepts for each distinct text among the prepared records' raw fields and the reference BHCs, extracted once per text.
-- **Record-concepts artifact**: each admission's records in chronological order, with each record's concepts and token count per model. The oracle selection reads it.
-
 ## Setup
 
 First-time setup is one flow: prerequisites, Python dependencies, Hugging Face tokenizers, BERTScore and scispaCy/UMLS models, and the local llama.cpp server. Run it once before the Usage steps below. See [docs/setup.md](docs/setup.md).
