@@ -1,0 +1,70 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+.pytest_cache/
+
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# mypy
+.mypy_cache/
+
+# Ruff
+.ruff_cache/
+
+# IDE
+.idea/
+.vscode/
+!.vscode/launch.json
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
+
+# OS
+.DS_Store
+
+# MIMIC-derived data lives in the sibling phd-dissertation-experiment-results repo.
+# These entries are safety nets preventing accidental local creation.
+results/
+cohorts/
+concepts/
+
+# DuckDB files
+*.duckdb
+*.duckdb.wal
+
+# Implementation plans (ephemeral, not committed)
+docs/superpowers/
+docs/recall-investigation-plan.md
+
+# Git worktrees
+.worktrees/
+
+# Local llama.cpp binary and model GGUFs (populated by scripts/fetch_llama_and_models.sh)
+local-llm/
+
+# llama-server logs (written by scripts/serve_local_llm.sh; preserve specific runs with `git add -f`)
+logs/
