@@ -4,10 +4,13 @@ Questions answered:
 
 - How long are reference Brief Hospital Courses outside the experiment cohort?
   The prompts' 250 to 600 word target is this range, rounded.
-- How long is each model's output relative to its admission's reference, per
-  admission size? A prompt change passes the prompt test length gate when every
-  model's median ratio is between 0.7 and 1.3 (see the testing appendix of
+- Does each model's output meet the prompts' length target, per admission size?
+  A prompt change passes the prompt test length gate when every model's median
+  generated words fall within the target (see the testing appendix of
   docs/specs/prompt-builder-design.md).
+- How long is the output relative to its admission's reference? The ratio is
+  context for the gate. Output length barely follows reference length, so the
+  ratio mostly shows how long each reference is.
 
 Words are whitespace-separated tokens, counted the same way for generated and
 reference text. Truncated generations are left out, because they stop at the
@@ -35,6 +38,8 @@ from mimic_data_prep.mimic import BHC_JSONL
 logger = logging.getLogger(__name__)
 
 REPORT_NAME = "length"
+# The word range the brief and unformatted prompts ask for.
+TARGET_WORDS = (250, 600)
 # Every run's cohort (experiment, prompt test, smoke) is a subset of the experiment cohort.
 STRATA_COHORT_FILE = EXPERIMENT_COHORT_FILE
 
@@ -53,23 +58,32 @@ def reference_word_quartiles(
     return len(word_counts), statistics.quantiles(word_counts, n=4)
 
 
-def length_summary(ratios: pd.DataFrame) -> pd.DataFrame:
-    """Median gen/ref ratio and count under half, per model and stratum, plus an All row."""
+def length_summary(lengths: pd.DataFrame) -> pd.DataFrame:
+    """Generated words against the target and the gen/ref ratio, per model and stratum.
+
+    Each model also gets an All row.
+    """
+    low, high = TARGET_WORDS
     rows = []
-    for model, model_ratios in ratios.groupby("model"):
-        strata = reporting.sort_strata(model_ratios["token_stratum"].unique())
+    for model, model_lengths in lengths.groupby("model"):
+        strata = reporting.sort_strata(model_lengths["token_stratum"].unique())
         for stratum in [*strata, "All"]:
             if stratum == "All":
-                stratum_ratios = model_ratios["ratio"]
+                stratum_lengths = model_lengths
             else:
-                stratum_ratios = model_ratios.loc[model_ratios["token_stratum"] == stratum, "ratio"]
+                stratum_lengths = model_lengths[model_lengths["token_stratum"] == stratum]
+            words = stratum_lengths["generated_words"]
+            ratios = stratum_lengths["ratio"]
             rows.append(
                 {
                     "model": model,
                     "token_stratum": stratum,
-                    "n": len(stratum_ratios),
-                    "median_ratio": stratum_ratios.median(),
-                    "under_half": int((stratum_ratios < 0.5).sum()),
+                    "n": len(stratum_lengths),
+                    "median_words": words.median(),
+                    "under_target": int((words < low).sum()),
+                    "over_target": int((words > high).sum()),
+                    "median_ratio": ratios.median(),
+                    "under_half": int((ratios < 0.5).sum()),
                 }
             )
     return pd.DataFrame(rows)
@@ -95,8 +109,8 @@ def _read_generations(model_dir: Path) -> dict[int, tuple[bool, str]]:
     return generations
 
 
-def length_ratios(run_dir: Path, strata: dict[int, str]) -> tuple[pd.DataFrame, int]:
-    """Per-admission gen/ref word ratio for every model, plus the truncated generation count."""
+def per_admission_lengths(run_dir: Path, strata: dict[int, str]) -> tuple[pd.DataFrame, int]:
+    """Per-admission generated words and gen/ref ratio, plus the truncated generation count."""
     generations_by_model = {}
     for model_dir in model_dirs(run_dir):
         generations_by_model[model_dir.name] = _read_generations(model_dir)
@@ -112,8 +126,15 @@ def length_ratios(run_dir: Path, strata: dict[int, str]) -> tuple[pd.DataFrame, 
             if truncated:
                 truncated_count += 1
                 continue
-            ratio = len(text.split()) / len(references[hadm_id].split())
-            rows.append({"model": model, "token_stratum": strata[hadm_id], "ratio": ratio})
+            generated_words = len(text.split())
+            rows.append(
+                {
+                    "model": model,
+                    "token_stratum": strata[hadm_id],
+                    "generated_words": generated_words,
+                    "ratio": generated_words / len(references[hadm_id].split()),
+                }
+            )
     return pd.DataFrame(rows), truncated_count
 
 
@@ -126,11 +147,18 @@ def main() -> None:
     attributes = cohort_attributes(STRATA_COHORT_FILE)
     strata = {hadm_id: attrs["token_stratum"] for hadm_id, attrs in attributes.items()}
     n_references, (p25, median, p75) = reference_word_quartiles(BHC_JSONL, set(attributes))
-    ratios, truncated_count = length_ratios(args.run_dir, strata)
+    lengths, truncated_count = per_admission_lengths(args.run_dir, strata)
     table = reporting.markdown_table(
-        length_summary(ratios),
+        length_summary(lengths),
         float_format="{:.2f}",
-        right_align=("n", "median_ratio", "under_half"),
+        right_align=(
+            "n",
+            "median_words",
+            "under_target",
+            "over_target",
+            "median_ratio",
+            "under_half",
+        ),
     )
 
     body = (
@@ -139,6 +167,7 @@ def main() -> None:
         f"Reference word counts over {n_references:,} successful extractions outside the "
         f"experiment cohort: 25th percentile {p25:.0f}, median {median:.0f}, "
         f"75th percentile {p75:.0f}.\n\n"
+        f"The length target is {TARGET_WORDS[0]} to {TARGET_WORDS[1]} words. "
         "The ratio is generated words over reference words for the same admission. "
         f"{truncated_count} truncated generations are left out.\n\n"
         f"{table}\n"

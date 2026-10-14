@@ -156,13 +156,16 @@ class TestQualityFigureGolden:
 
 
 class TestLengthSummaryGolden:
-    """A wrong n or a ratio under the wrong stratum would read as a normal length gate."""
+    """A wrong n, a miscounted target miss, or a row under the wrong stratum would
+    read as a normal length gate.
+    """
 
     def test_per_stratum_and_overall_rows(self) -> None:
-        ratios = pd.DataFrame(
+        lengths = pd.DataFrame(
             {
                 "model": ["llama", "gemma", "gemma", "gemma", "gemma"],
                 "token_stratum": ["4K", "8K", "4K", "4K", "4K"],
+                "generated_words": [300, 700, 200, 240, 400],
                 "ratio": [0.6, 1.0, 0.9, 0.2, 0.4],
             }
         )
@@ -171,8 +174,11 @@ class TestLengthSummaryGolden:
                 "model": ["gemma", "gemma", "gemma", "llama", "llama"],
                 "token_stratum": ["4K", "8K", "All", "4K", "All"],
                 "n": [3, 1, 4, 1, 1],
+                "median_words": [240.0, 700.0, 320.0, 300.0, 300.0],
+                "under_target": [2, 0, 2, 0, 0],
+                "over_target": [0, 1, 1, 0, 0],
                 "median_ratio": [0.4, 1.0, 0.65, 0.6, 0.6],
                 "under_half": [2, 0, 2, 0, 0],
             }
         )
-        assert_frame_equal(length_script.length_summary(ratios), expected, check_dtype=False)
+        assert_frame_equal(length_script.length_summary(lengths), expected, check_dtype=False)
