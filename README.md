@@ -182,14 +182,12 @@ Generation writes results to the sibling `phd-dissertation-experiment-results` r
 
 What to check: every admission in the smoke cohort completes with no errors in the log output.
 
-Score it the same way every experiment is scored, so the smoke test exercises the same model loads, concept extraction, and coverage path. Requires the [BERTScore models](docs/setup.md#bertscore-models), the [UMLS install](docs/setup.md#umls-concept-overlap), and the [QuickUMLS setup](docs/quickumls-setup.md):
+Score the generated BHCs, adding `eval_results.jsonl` and `eval_record.yaml` alongside `run_results.jsonl` in the model directory:
 
 ```bash
 RESULTS=../phd-dissertation-experiment-results/results
 uv run python scripts/pipeline/score_results.py $RESULTS/smoke/unformatted-prompt
 ```
-
-Scoring adds `eval_results.jsonl` and `eval_record.yaml` alongside `run_results.jsonl` in the model directory.
 
 What to check: the log reports the same admission count that generation produced.
 
