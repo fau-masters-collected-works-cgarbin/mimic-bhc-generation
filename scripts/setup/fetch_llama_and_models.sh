@@ -21,7 +21,11 @@ mkdir -p "$LLAMA_DIR" "$MODELS_DIR"
 # Pin versions/tags for reproducibility
 # WARNING: Manually delete the destinations above and re-run this script to bump versions.
 
-LLAMA_TAG="b9535"
+# Version releases (vX.Y.Z) carry no binaries. Their release notes name the nightly
+# build that holds them, under "Assets". Bump both together.
+# Releases at https://github.com/ggml-org/llama.cpp/releases
+LLAMA_VERSION="v0.6.0"
+LLAMA_BUILD="b11429"
 
 # Relative paths to the GGUF files in the Hugging Face repos, pinned by revision SHA.
 # Format: "hf_repo|revision_sha|filename"
@@ -42,11 +46,11 @@ MODELS=(
 
 # llama.cpp
 if [[ ! -x "$LLAMA_DIR/llama-server" ]]; then
-  archive="llama-${LLAMA_TAG}-bin-macos-arm64.tar.gz"
-  echo "==> Downloading llama.cpp ${LLAMA_TAG}"
+  archive="llama-${LLAMA_BUILD}-bin-macos-arm64.tar.gz"
+  echo "==> Downloading llama.cpp ${LLAMA_VERSION} (build ${LLAMA_BUILD})"
   curl -fL --progress-bar -o "/tmp/$archive" \
-    "https://github.com/ggml-org/llama.cpp/releases/download/${LLAMA_TAG}/${archive}"
-  # The tarball nests everything inside llama-${LLAMA_TAG}/. Strip that so the
+    "https://github.com/ggml-org/llama.cpp/releases/download/${LLAMA_BUILD}/${archive}"
+  # The tarball nests everything inside llama-${LLAMA_BUILD}/. Strip that so the
   # binaries go directly into $LLAMA_DIR, where the check above looks for them.
   tar -xzf "/tmp/$archive" -C "$LLAMA_DIR" --strip-components=1
   rm "/tmp/$archive"
