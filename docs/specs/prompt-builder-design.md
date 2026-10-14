@@ -12,7 +12,7 @@ Template files live in `prompts/`. See `prompts/README.md` for the instruction-o
 
 **Each variant differs from `brief` in one paragraph.** `unformatted` is `brief` without the format paragraph, so comparing the two measures the format instruction alone. `thorough` is `brief` with the brevity sentences replaced by a thoroughness instruction, so comparing the two measures what the model is asked to include. Every other paragraph is identical across all five templates, including the coverage and disposition instructions, which earlier differed between the narrative and domain templates. `TestPromptVariantDifferences` in `tests/test_prompt_builder.py` enforces this.
 
-**The brevity paragraph names a length.** The earlier sentence "Prioritize brevity over completeness of detail" cut Gemma's output under the unformatted prompt to a median 0.33 of the reference length, with 78 of 116 admissions under half. `scripts/analysis/length.py` computes both figures from the archived run `archive/obsolete/case0_minimal/case0_minimal-2026-07-14-dedup-sentence`. The earlier sentence also pulled against the coverage paragraph's "Do not omit documented problems". The paragraph now gives a typical length of 250 to 600 words, the rounded interquartile range (242 to 617 words) of the 51,015 successfully extracted BHCs outside the experiment cohort, reported at the top of the same script's output. Leaving out the cohort keeps the scored references out of the prompt. The thoroughness paragraph replaces the length sentence along with the rest of the brevity paragraph.
+**The brevity paragraph names a length.** The earlier sentence "Prioritize brevity over completeness of detail" cut Gemma's output under the unformatted prompt to a median 0.33 of the reference length, with 78 of 116 admissions under half. `scripts/analysis/length.py` computes both figures from the archived run `archive/obsolete/case0_minimal/case0_minimal-2026-07-14-dedup-sentence`. The earlier sentence also pulled against the coverage paragraph's "Do not omit documented problems". The paragraph now asks for 250 to 600 words, the rounded interquartile range (242 to 617 words) of the 51,015 successfully extracted BHCs outside the experiment cohort, reported at the top of the same script's output. Leaving out the cohort keeps the scored references out of the prompt. The thoroughness paragraph replaces the length sentence along with the rest of the brevity paragraph.
 
 **The prompts do not ask for abbreviations.** The abbreviation instruction existed to shorten output, and output was already far shorter than the references. The concept extractor does not expand abbreviations, so an abbreviated term can link to a different UMLS concept than the reference's spelled-out term.
 
@@ -30,6 +30,16 @@ Template files live in `prompts/`. See `prompts/README.md` for the instruction-o
 
 Each entry records one change to the prompt wording, its prompt test result, and the decision. Newest first. The commit of each tested change is in the prompt test run records, under `git_commit`.
 
+### 2026-10-14: length target as an instruction
+
+Change, in `brief` and `unformatted`: "A typical Brief Hospital Course runs 250 to 600 words" became "Write 250 to 600 words".
+
+Reason: under the descriptive wording, Gemma's median output was 247.5 words over the first 6 prompt test admissions, just under the target. Three outputs fell below 250 words, two of them single-paragraph narratives at 4K and 8K.
+
+Prompt test: pending.
+
+Decision: pending.
+
 ### 2026-10-14: length target, physician role, no abbreviation instruction
 
 Changes, identical in every template that has the paragraph:
@@ -41,9 +51,9 @@ Changes, identical in every template that has the paragraph:
 
 Reason: under the earlier wording, the July runs produced output far shorter than the references. Gemma's median ratio under the unformatted prompt was 0.33. The design decisions above give the evidence for each change.
 
-Prompt test: pending.
+Prompt test: failed at fail-fast checkpoint 1 (Gemma, `brief`, commit `2a1783e`). Over the 6 admissions from 4K to 16K, the median ratio of generated to reference words was 0.67, below the 0.7 floor. By stratum, with 2 admissions each: 4K 0.81, 8K 0.54, 16K 0.92. No output fell under half the reference length. Format adherence was clean. All 3 narrative outputs had no headers. All 3 domain-organized outputs used `#` headers (6 to 7 each). No output was truncated, restated the title, or wrote a "not documented" line. The run was stopped after 7 of 14 admissions.
 
-Decision: pending.
+Decision: revise the length wording and test again. Two findings also changed the gate for the next attempt. Gemma's output length barely followed reference length (176 to 324 words on references of 197 to 571), so the ratio mostly showed how long each reference was. The three admissions under 0.7 had the three longest references (401 to 571 words). One of them had the best concept F1 of the seven. The gate now checks generated words against the 250 to 600 target the prompt asks for. By that measure attempt 1 also ran short, with a median of 247.5 words over the 6 admissions. The gate changed after this attempt failed, on the length data above. Concept scores did not decide it. On the 7 completed admissions, scispaCy concept F1 was 0.138 against 0.107 for July `brief`, a gain within noise at n=7.
 
 ## Appendix: testing prompt changes
 
@@ -73,7 +83,7 @@ done
 
 The change passes when all three criteria hold on the worst model:
 
-- **Length under `brief` and `unformatted`.** The median ratio of generated to reference words is between 0.7 and 1.3 in `length.md`. The per-stratum rows show whether the long strata keep the target. `thorough` has no length target, so its ratio is reported without a gate.
+- **Length under `brief` and `unformatted`.** The median generated words (`median_words` in `length.md`) fall within the 250 to 600 target. The per-stratum rows show whether the long strata keep the target. The ratio of generated to reference words is context only, because output length barely follows reference length. `thorough` has no length target, so its lengths are reported without a gate.
 - **Format adherence under `brief`.** Narrative outputs have no headers. Domain-organized outputs use `#` problem headers. Check in the results viewer.
 - **No regressions.** No generation hits the output cap (`completion.md`), restates the section title, or writes a line saying information is not documented.
 
@@ -90,8 +100,8 @@ Admissions run in cohort-file order, which runs from 4K to 112K, and the 96K and
    uv run python scripts/pipeline/run_experiment.py --model gemma_4_e4b --prompt brief --prompt-test
    ```
 
-2. **After about 2 minutes, check the short strata.** Once 4K through 16K finish, run `length.py` on the run folder. If those rows miss the length target, the change fails. Stop the run and revise the wording.
-3. **After about 28 minutes, check every stratum.** Gemma's run is complete. The 96K and 112K rows show whether the target holds when the instructions sit far from where the model starts writing. If they hold, run the full loop above. It skips Gemma's completed `brief` run.
+2. **After about 2 minutes, check the short strata.** Once 4K through 16K finish, run `length.py` on the run folder. If the median generated words over those admissions fall outside 250 to 600, the change fails. Stop the run and revise the wording.
+3. **After about 28 minutes, check every stratum.** Gemma's run is complete. The 96K and 112K rows show whether the target holds when the instructions sit far from where the model starts writing. Score the run with `score_results.py` for the direction of the concept metrics. If the target holds, run the full loop above. It skips Gemma's completed `brief` run.
 
 The run log does not flag a generation that hits the output cap. `length.md` counts those generations, so the same partial check on Gemma's `thorough` run shows the risk early.
 

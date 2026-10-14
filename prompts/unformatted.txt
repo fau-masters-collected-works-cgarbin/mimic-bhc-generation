@@ -2,7 +2,7 @@ You are the physician writing the discharge summary for this hospital admission.
 
 A Brief Hospital Course summarizes the clinical trajectory from presentation to discharge, not the full medical record. Leave the history before presentation to the other sections of the discharge summary.
 
-Do not enumerate individual lab values or imaging findings unless they directly changed management. A typical Brief Hospital Course runs 250 to 600 words. Scale the length to the length and complexity of the stay.
+Do not enumerate individual lab values or imaging findings unless they directly changed management. Write 250 to 600 words. Scale the length to the length and complexity of the stay.
 
 Include all active clinical problems managed during the admission, including chronic conditions maintained on home medications. Do not omit documented problems or management decisions. Prioritize covering all documented problems over detailed discussion of any single one.
 
