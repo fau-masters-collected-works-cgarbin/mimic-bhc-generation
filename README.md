@@ -152,9 +152,7 @@ Generation reads the prepared records, formats the prompt, and generates, record
 
 #### Smoke test
 
-The smoke test verifies that the on-device pipeline works end-to-end (generation + scoring + analysis). Always start with the smoke test to verify the pipeline before running real experiments.
-
-The smoke test runs one model (Gemma 4 E4B) on the smoke cohort with the unformatted prompt over all records. The smoke cohort is sized and bounded for fast on-device runs (see `select_smoke_cohort.py`), since its only job is to catch wiring errors. It is the lightest pass through the local pipeline, used before launching the heavier experiments that run all three local models.
+The smoke test verifies that the on-device pipeline works end-to-end (generation + scoring + analysis). It uses a small set of admissions on one model (Gemma 4 E4B) to catch wiring errors before running the full experiment.
 
 First, create the smoke test cohort and prepare its inputs:
 
