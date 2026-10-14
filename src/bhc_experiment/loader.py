@@ -32,7 +32,6 @@ import duckdb
 from mimic_data_prep.mimic import (
     age_at_admission_sql,
     bhc_ref,
-    last_service_per_admission_sql,
     note_order_sql,
     table_ref,
 )
@@ -102,15 +101,13 @@ class BhcStructure:
 
 @dataclass(frozen=True)
 class AdmissionMetadata:
-    """Admission demographics from ADMISSIONS + PATIENTS + SERVICES."""
+    """Admission demographics from ADMISSIONS + PATIENTS."""
 
     HADM_ID: int
     SUBJECT_ID: int
     ADMITTIME: str
     DISCHTIME: str
     GENDER: str
-    SERVICE: str | None  # CURR_SERVICE from SERVICES.csv.gz. None if no SERVICES row
-    los_days: int
     age: int
 
 
@@ -142,7 +139,6 @@ def prepare_cohort(conn: duckdb.DuckDBPyConnection, hadm_ids: list[int]) -> None
     noteevents = table_ref("NOTEEVENTS.csv.gz")
     admissions_ref = table_ref("ADMISSIONS.csv.gz")
     patients_ref = table_ref("PATIENTS.csv.gz")
-    services_ref = table_ref("SERVICES.csv.gz")
     labevents = table_ref("LABEVENTS.csv.gz")
     d_labitems = table_ref("D_LABITEMS.csv.gz")
     prescriptions_ref = table_ref("PRESCRIPTIONS.csv.gz")
@@ -222,10 +218,8 @@ def prepare_cohort(conn: duckdb.DuckDBPyConnection, hadm_ids: list[int]) -> None
         [hadm_ids],
     )
 
-    # Admissions: demographics with computed LOS, age, and discharging service.
-    # age_at_admission_sql and last_service_per_admission_sql centralize the
-    # MIMIC-III age cap and the ROW_NUMBER discharging-service pattern shared
-    # with the cohort sampler.
+    # Admissions: demographics with the computed age. age_at_admission_sql holds
+    # the MIMIC-III age cap shared with the cohort sampler.
     conn.execute(
         f"""
         CREATE OR REPLACE TEMP TABLE cohort_admissions AS
@@ -234,15 +228,9 @@ def prepare_cohort(conn: duckdb.DuckDBPyConnection, hadm_ids: list[int]) -> None
             a.ADMITTIME::VARCHAR AS ADMITTIME,
             a.DISCHTIME::VARCHAR AS DISCHTIME,
             p.GENDER,
-            s.CURR_SERVICE AS SERVICE,
-            -- DATE_DIFF('day', ...) counts calendar day boundaries crossed, not
-            -- elapsed hours. Same-day admit/discharge = 0.
-            DATE_DIFF('day', a.ADMITTIME::TIMESTAMP, a.DISCHTIME::TIMESTAMP) AS los_days,
             {age_at_admission_sql(admit_alias="a", patients_alias="p")} AS age
         FROM {admissions_ref} a
         JOIN {patients_ref} p ON a.SUBJECT_ID = p.SUBJECT_ID
-        LEFT JOIN ({last_service_per_admission_sql(services_ref)}) s
-            ON a.HADM_ID = s.HADM_ID
         WHERE a.HADM_ID IN (SELECT UNNEST($1::INT[]))
         """,
         [hadm_ids],
@@ -286,7 +274,7 @@ def load_admission_bundle(conn: duckdb.DuckDBPyConnection, hadm_id: int) -> Admi
     # Admission metadata
     adm_row = _fetch_one_row(
         conn,
-        "SELECT HADM_ID, SUBJECT_ID, ADMITTIME, DISCHTIME, GENDER, SERVICE, los_days, age "
+        "SELECT HADM_ID, SUBJECT_ID, ADMITTIME, DISCHTIME, GENDER, age "
         "FROM cohort_admissions WHERE HADM_ID = $1",
         [hadm_id],
         label=f"HADM_ID {hadm_id} in cohort_admissions",
@@ -297,9 +285,7 @@ def load_admission_bundle(conn: duckdb.DuckDBPyConnection, hadm_id: int) -> Admi
         ADMITTIME=adm_row[2],
         DISCHTIME=adm_row[3],
         GENDER=adm_row[4],
-        SERVICE=adm_row[5],
-        los_days=adm_row[6],
-        age=adm_row[7],
+        age=adm_row[5],
     )
 
     # BHC ground truth

@@ -19,9 +19,8 @@ Use standard clinical abbreviations (e.g., s/p, b/l, HD, POD, CXR, ACS, TTE, NGT
 ---
 
 Patient: {age} year old {gender}
-Service: {service}
 Admitted: {admit_time}
 Discharged: {discharge_time}
-Length of stay: {los_days} days
 
+Medical records:
 {admission_data}

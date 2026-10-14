@@ -10,6 +10,7 @@ from bhc_experiment.prompt_builder import (
     build_prompt,
     filter_notes,
     format_admission_records,
+    format_note,
     resolve_template_name,
 )
 
@@ -127,6 +128,13 @@ class TestChronologicalSortKey:
         assert chronological_sort_key(rx) == ("2150-01-04 12:00:00", 9)
 
 
+class TestFormatNote:
+    def test_category_trailing_space_is_stripped(self) -> None:
+        """MIMIC-III stores "Physician ", "Respiratory ", and "Case Management "."""
+        note = make_note(1, "Text.", CATEGORY="Physician ", CHARTTIME="2150-01-01 14:00:00")
+        assert format_note(note) == "[2150-01-01 14:00:00] NOTE (Physician): Text."
+
+
 class TestSerializeRecords:
     """Tests for record ordering."""
 
@@ -174,10 +182,8 @@ def prompts_dir(tmp_path: Path) -> Path:
         "---\n"
         "\n"
         "Patient: {age} year old {gender}\n"
-        "Service: {service}\n"
         "Admitted: {admit_time}\n"
         "Discharged: {discharge_time}\n"
-        "Length of stay: {los_days} days\n"
         "\n"
         "{admission_data}"
     )
@@ -190,10 +196,8 @@ def prompts_dir(tmp_path: Path) -> Path:
         "---\n"
         "\n"
         "Patient: {age} year old {gender}\n"
-        "Service: {service}\n"
         "Admitted: {admit_time}\n"
         "Discharged: {discharge_time}\n"
-        "Length of stay: {los_days} days\n"
         "\n"
         "{admission_data}"
     )
@@ -220,17 +224,13 @@ class TestBuildPrompt:
 
     def test_user_message_has_demographics(self, prompts_dir: Path) -> None:
         bundle = _make_bundle()
-        admission = dataclasses.replace(
-            bundle.admission, age=72, GENDER="M", SERVICE="CSURG", los_days=6
-        )
+        admission = dataclasses.replace(bundle.admission, age=72, GENDER="M")
 
         result = build_prompt(
             dataclasses.replace(bundle, admission=admission), "unformatted", prompts_dir=prompts_dir
         )
 
         assert "Patient: 72 year old M" in result.user
-        assert "Service: CSURG" in result.user
-        assert "Length of stay: 6 days" in result.user
 
 
 class TestRealTemplates:
@@ -272,6 +272,20 @@ class TestRealTemplates:
         )
         result = build_prompt(bundle, "brief")
         assert result.template_name == "brief_domain"
+
+    def test_every_template_has_the_same_header(self) -> None:
+        """The header gives only the facts reference BHCs use."""
+        header = (
+            "Patient: {age} year old {gender}\n"
+            "Admitted: {admit_time}\n"
+            "Discharged: {discharge_time}\n"
+            "\n"
+            "Medical records:\n"
+            "{admission_data}"
+        )
+        for template in sorted(_REAL_PROMPTS_DIR.glob("*.txt")):
+            user_part = template.read_text().split("---", maxsplit=1)[1].strip()
+            assert user_part == header, template.name
 
     @pytest.mark.parametrize(
         ("category", "convention", "modifiers", "expected"),

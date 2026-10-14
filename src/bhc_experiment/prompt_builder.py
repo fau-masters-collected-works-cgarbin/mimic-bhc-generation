@@ -37,10 +37,10 @@ def _resolve_format_suffix(structure: BhcStructure) -> str:
     """Map BhcStructure to a format suffix for template file naming.
 
     Routing stops at narrative vs. domain-organized. Modifiers such as
-    acute_chronic and the numbering convention are ignored: templates fitted to
-    finer ground-truth structure were starting to overfit it. The pool has no
-    standardized_template admissions, and the domain template is their closest
-    format.
+    acute_chronic and the numbering convention are ignored, because templates
+    fitted to finer ground-truth structure were starting to overfit it. The pool
+    has no standardized_template admissions. If any appear, they get the domain
+    template, the closest format.
     """
     if structure.category == "narrative":
         return "_narrative"
@@ -57,11 +57,9 @@ def format_admission_records(
     Raises if the notes still have records the note filter excludes, then
     serializes every record in one chronological stream.
 
-    Frozen format. Do not change this function's output, including the helper
-    formatters it calls. Every already-generated run's saved prompt was built
-    here, so a changed format would make new runs incomparable to those. If the
-    format must change, add a format_admission_records_v2 and leave this one
-    intact.
+    Changing this output, including the helper formatters it calls, makes every
+    existing run's saved prompt stale. Scoring refuses those runs until they are
+    generated again.
     """
     _reject_unprepared(notes)
     return _serialize_chronological(notes, labs, prescriptions)
@@ -103,7 +101,8 @@ def filter_notes(notes: list[NoteEvent]) -> list[NoteEvent]:
 def format_note(note: NoteEvent) -> str:
     """Format a single note for serialization."""
     timestamp = note.CHARTTIME or note.CHARTDATE or "unknown date"
-    return f"[{timestamp}] NOTE ({note.CATEGORY}): {note.TEXT}"
+    # MIMIC-III stores some categories with a trailing space ("Physician ").
+    return f"[{timestamp}] NOTE ({note.CATEGORY.strip()}): {note.TEXT}"
 
 
 def format_lab(lab: LabEvent) -> str:
@@ -206,8 +205,9 @@ def build_prompt(
 ) -> PromptResult:
     """Build the prompt for one admission under a prompt variant.
 
-    Frozen format, for the same reason as format_admission_records (see that
-    function's docstring). Add a new version if the format must change.
+    Changing the prompt this builds, here or in a template file, makes every
+    existing run's saved prompt stale. Scoring refuses those runs until they are
+    generated again.
 
     prompts_dir overrides the default prompts/ directory, for testing.
     """
@@ -242,10 +242,8 @@ def build_prompt(
     user_part = user_template
     user_part = user_part.replace("{age}", str(bundle.admission.age))
     user_part = user_part.replace("{gender}", bundle.admission.GENDER)
-    user_part = user_part.replace("{service}", str(bundle.admission.SERVICE or ""))
     user_part = user_part.replace("{admit_time}", bundle.admission.ADMITTIME)
     user_part = user_part.replace("{discharge_time}", bundle.admission.DISCHTIME)
-    user_part = user_part.replace("{los_days}", str(bundle.admission.los_days))
     # admission_data last: it contains arbitrary clinical text that may have
     # characters matching other placeholder names.
     user_part = user_part.replace("{admission_data}", admission_data)

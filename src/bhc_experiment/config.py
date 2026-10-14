@@ -117,8 +117,7 @@ SMOKE_COHORT_FILE = "smoke_cohort.json"
 # The eligible admissions the cohort is sampled from.
 FILTERED_POOL_FILE = "filtered_pool.json"
 
-# "unformatted" and "thorough" each differ from "brief" in one paragraph. See
-# prompts/README.md.
+# "unformatted" and "thorough" each differ from "brief" in one paragraph.
 PROMPT_VARIANTS = ("brief", "unformatted", "thorough")
 DEDUPLICATIONS = ("none", "sentence")
 

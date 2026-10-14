@@ -83,21 +83,6 @@ def _write_loader_fixtures(mimic_dir: Path, bhc_path: Path) -> None:
     with gzip.open(mimic_dir / "ADMISSIONS.csv.gz", "wt") as f:
         f.write(admissions)
 
-    # SERVICES
-    # 1001: two service transfers, last is CSURG (discharging service)
-    # 1002: single service, SURG
-    # 1003: single service, MED
-    services = (
-        "ROW_ID,SUBJECT_ID,HADM_ID,TRANSFERTIME,PREV_SERVICE,CURR_SERVICE\n"
-        "1,11,1001,2150-01-02 08:00:00,,MED\n"
-        "2,11,1001,2150-01-05 10:00:00,MED,CSURG\n"
-        "3,12,1002,2150-02-01 10:00:00,,SURG\n"
-        "4,13,1003,2150-03-01 06:00:00,,MED\n"
-        "5,14,1004,2150-04-01 08:00:00,,MED\n"
-    )
-    with gzip.open(mimic_dir / "SERVICES.csv.gz", "wt") as f:
-        f.write(services)
-
     # NOTEEVENTS
     # 1001: 5 notes total
     #   - row 1: normal nursing note on Jan 3 (within admission)
@@ -313,7 +298,6 @@ class TestLoadBundle:
         assert bundle.admission.HADM_ID == 1001
         assert bundle.admission.SUBJECT_ID == 11
         assert bundle.admission.GENDER == "M"
-        assert bundle.admission.los_days == 6
         assert bundle.admission.age == 50
 
     def test_ground_truth_bhc(self) -> None:
@@ -558,14 +542,3 @@ class TestLoadBundle:
         conn.execute("INSERT INTO cohort_bhc SELECT * FROM cohort_bhc WHERE hadm_id = 1001")
         with pytest.raises(ValueError, match="expected 1 row, got 2"):
             load_admission_bundle(conn, 1001)
-
-    def test_admission_service(self) -> None:
-        """Bundle has the last (discharging) service for the admission."""
-        conn = duckdb.connect()
-        prepare_cohort(conn, [1001, 1002])
-        bundle_1001 = load_admission_bundle(conn, 1001)
-        bundle_1002 = load_admission_bundle(conn, 1002)
-        # 1001 transferred MED -> CSURG, discharging service is CSURG
-        assert bundle_1001.admission.SERVICE == "CSURG"
-        # 1002 single service SURG
-        assert bundle_1002.admission.SERVICE == "SURG"
