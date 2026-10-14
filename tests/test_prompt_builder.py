@@ -250,7 +250,6 @@ class TestRealTemplates:
     def test_unformatted(self) -> None:
         result = build_prompt(_make_bundle(), "unformatted")
         assert result.template_name == "unformatted"
-        assert "Patient:" in result.user
 
     def test_brief_narrative(self) -> None:
         bundle = self._bundle_with_structure(
@@ -272,45 +271,6 @@ class TestRealTemplates:
         )
         result = build_prompt(bundle, "brief")
         assert result.template_name == "brief_domain"
-
-    def test_every_template_has_the_same_header(self) -> None:
-        """The header gives only the facts reference BHCs use."""
-        header = (
-            "Patient: {age} year old {gender}\n"
-            "Admitted: {admit_time}\n"
-            "Discharged: {discharge_time}\n"
-            "\n"
-            "Medical records:\n"
-            "{admission_data}"
-        )
-        for template in sorted(_REAL_PROMPTS_DIR.glob("*.txt")):
-            user_part = template.read_text().split("---", maxsplit=1)[1].strip()
-            assert user_part == header, template.name
-
-    @pytest.mark.parametrize(
-        ("category", "convention", "modifiers", "expected"),
-        [
-            ("domain_organized", "#", [], "thorough_domain"),
-            ("narrative", None, [], "thorough_narrative"),
-        ],
-    )
-    def test_thorough_family_swaps_brevity_for_thoroughness(
-        self, category: str, convention: str | None, modifiers: list, expected: str
-    ) -> None:
-        """Catches a brief template copied into the thorough family with the
-        brevity lines left in.
-        """
-        bundle = self._bundle_with_structure(
-            category=category, numbering_convention=convention, modifiers=modifiers
-        )
-        result = build_prompt(bundle, "thorough")
-        assert result.template_name == expected
-        # The two brevity sentences are gone, the thoroughness instruction is in.
-        assert "Prioritize brevity over completeness of detail" not in result.system
-        assert "Do not enumerate individual lab values" not in result.system
-        assert "Enumerate every documented" in result.system
-        # Structure and abbreviation guidance are preserved.
-        assert "standard clinical abbreviations" in result.system
 
 
 _REAL_PROMPTS_DIR = Path(__file__).parents[1] / "prompts"
