@@ -6,7 +6,7 @@ from pathlib import Path
 
 import yaml
 
-from bhc_experiment.config import INFERENCE, CliParameters
+from bhc_experiment.config import DRY_SAMPLER, CliParameters, inference_for
 from bhc_experiment.llm import LlmResult
 from bhc_experiment.results import (
     RUN_RECORD_FILENAME,
@@ -91,6 +91,13 @@ def _create_run(tmp_path: Path, *, total_admissions: int = 5, **overrides) -> Pa
 
 
 class TestCreateModelDir:
+    def test_run_record_logs_the_models_own_sampler(self, tmp_path):
+        """A Llama run that recorded the shared settings would hide that it ran with DRY."""
+        cli_parameters = CliParameters(model="llama_3_2_3b", prompt="brief")
+        model_dir = _create_run(tmp_path, cli_parameters=cli_parameters)
+        run_record = yaml.safe_load((model_dir / RUN_RECORD_FILENAME).read_text())
+        assert run_record["inference"]["dry_sampler"] == DRY_SAMPLER
+
     def test_creates_directory_and_run_record(self, tmp_path):
         model_dir = _create_run(tmp_path, total_admissions=200)
 
@@ -102,7 +109,7 @@ class TestCreateModelDir:
         assert "model" not in run_record
         cli_parameters = CliParameters(model="gemma_4_e4b", prompt="brief")
         assert CliParameters(**run_record["cli_parameters"]) == cli_parameters
-        assert run_record["inference"] == asdict(INFERENCE)
+        assert run_record["inference"] == asdict(inference_for("gemma_4_e4b"))
         assert run_record["total_admissions"] == 200
         assert run_record["status"] == "running"
         assert run_record["completed_at"] is None

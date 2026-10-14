@@ -2,7 +2,14 @@
 
 import pytest
 
-from bhc_experiment.config import PROMPT_TEST_COHORT_FILE, SMOKE_COHORT_FILE, CliParameters
+from bhc_experiment.config import (
+    DRY_SAMPLER,
+    INFERENCE,
+    PROMPT_TEST_COHORT_FILE,
+    SMOKE_COHORT_FILE,
+    CliParameters,
+    inference_for,
+)
 
 
 class TestCliParameters:
@@ -52,3 +59,16 @@ class TestCliParameters:
     def test_run_name_is_the_selection_and_prompt(self) -> None:
         cli_parameters = CliParameters(prompt="thorough", oracle_n=2)
         assert cli_parameters.run_name == "oracle-n-2/thorough-prompt"
+
+
+class TestInferenceFor:
+    """A model given the wrong sampler produces normal-looking output, so pin which gets DRY."""
+
+    def test_llama_gets_the_dry_sampler(self) -> None:
+        inference = inference_for("llama_3_2_3b")
+        assert inference.dry_sampler == DRY_SAMPLER
+        assert inference.frequency_penalty == INFERENCE.frequency_penalty
+
+    @pytest.mark.parametrize("model", ["gemma_4_e4b", "qwen_3_5_4b"])
+    def test_other_models_run_without_dry(self, model: str) -> None:
+        assert inference_for(model) == INFERENCE

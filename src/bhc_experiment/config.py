@@ -5,9 +5,11 @@ Everything every run shares is a constant here. What varies between runs is a
 run pins the constants.
 """
 
+import dataclasses
 from dataclasses import dataclass
 
 from bhc_experiment.llm import InferenceConfig
+from mimic_data_prep.models import model_by_key
 from mimic_data_prep.sampling import TOKEN_STRATA
 
 # The MEDCON-style concept space every run is scored in. The TUI filter is the
@@ -123,6 +125,26 @@ PROMPT_VARIANTS = ("brief", "unformatted", "thorough")
 DEDUPLICATIONS = ("none", "sentence")
 
 INFERENCE = InferenceConfig(temperature=0.0, max_completion_tokens=4096, frequency_penalty=0.5)
+
+# llama.cpp's DRY sampler penalizes extending a token sequence that already
+# appears in the last dry_penalty_last_n tokens, more steeply the longer the
+# repeat. The frequency penalty sees only the last 64 tokens, and the loops that
+# reach the output cap repeat every 200 to 700. An allowed length of 5 let loops
+# through. See "DRY sampler" in docs/specs/prompt-builder-design.md.
+DRY_SAMPLER = {
+    "dry_multiplier": 0.8,
+    "dry_base": 1.75,
+    "dry_allowed_length": 3,
+    "dry_penalty_last_n": 2048,
+}
+
+
+def inference_for(model_key: str) -> InferenceConfig:
+    """The inference settings one model generates with."""
+    if model_by_key(model_key).dry_sampler:
+        return dataclasses.replace(INFERENCE, dry_sampler=DRY_SAMPLER)
+    return INFERENCE
+
 
 # The oracle selects only on the long strata. Short admissions already fit in
 # memory and finish in seconds, so selection has nothing to save there.

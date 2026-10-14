@@ -19,6 +19,7 @@ class Model:
     hf_repo: str  # tokenizer source
     gguf_file: str  # weights under local-llm/models/
     flash_attn: bool  # llama-server --flash-attn default for this model
+    dry_sampler: bool  # generate with config.DRY_SAMPLER
 
 
 MODELS: tuple[Model, ...] = (
@@ -29,6 +30,9 @@ MODELS: tuple[Model, ...] = (
         hf_repo="meta-llama/Llama-3.2-3B-Instruct",
         gguf_file="Llama-3.2-3B-Instruct-Q4_K_M.gguf",
         flash_attn=True,
+        # The only model whose repetition loops reach the output cap often enough
+        # to matter. See "DRY sampler" in docs/specs/prompt-builder-design.md.
+        dry_sampler=True,
     ),
     Model(
         key="qwen_3_5_4b",
@@ -37,6 +41,7 @@ MODELS: tuple[Model, ...] = (
         hf_repo="Qwen/Qwen3.5-4B",
         gguf_file="Qwen_Qwen3.5-4B-Q4_K_M.gguf",
         flash_attn=True,
+        dry_sampler=False,
     ),
     Model(
         key="gemma_4_e4b",
@@ -48,6 +53,7 @@ MODELS: tuple[Model, ...] = (
         # total wall time at 16K+ even though on is faster for Gemma decode. See
         # "Local llama.cpp inference setup.md" in the writing vault.
         flash_attn=False,
+        dry_sampler=False,
     ),
 )
 MODEL_KEYS: tuple[str, ...] = tuple(m.key for m in MODELS)

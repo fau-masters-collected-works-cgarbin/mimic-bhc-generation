@@ -12,6 +12,7 @@ from bhc_experiment.llm import (
     ReasoningNotDisabledError,
     _parse_response,
     call_llm,
+    sampler_mismatches,
     timing_breakdown,
 )
 
@@ -178,6 +179,54 @@ class TestCallLlm:
             "extra_body": {"chat_template_kwargs": {"enable_thinking": False}},
         }
         assert result.text == "Generated BHC text."
+
+
+class TestDrySampler:
+    """llama-server accepts a misspelled sampler key silently, so a typo turns DRY off unseen."""
+
+    def test_dry_keys_reach_the_request(self) -> None:
+        from bhc_experiment.prompt_builder import PromptResult
+
+        captured: dict = {}
+        prompt = PromptResult(system="sys", user="usr", template_name="unformatted")
+        dry = {
+            "dry_multiplier": 0.8,
+            "dry_base": 1.75,
+            "dry_allowed_length": 3,
+            "dry_penalty_last_n": 2048,
+        }
+        inference = InferenceConfig(
+            temperature=0.0, max_completion_tokens=2048, frequency_penalty=0.5, dry_sampler=dry
+        )
+
+        call_llm(prompt, "llama-3.2-3b", inference, _capturing_client(captured))
+
+        assert captured["extra_body"] == {
+            "chat_template_kwargs": {"enable_thinking": False},
+            "dry_multiplier": 0.8,
+            "dry_base": 1.75,
+            "dry_allowed_length": 3,
+            "dry_penalty_last_n": 2048,
+        }
+
+    def test_mismatches_name_each_setting_the_server_did_not_apply(self) -> None:
+        dry = {
+            "dry_multiplier": 0.8,
+            "dry_base": 1.75,
+            "dry_allowed_length": 3,
+            "dry_penalty_last_n": 2048,
+        }
+        slot_params = {"dry_multiplier": 0.0, "dry_base": 1.75, "dry_allowed_length": 3}
+        assert sampler_mismatches(slot_params, dry) == {
+            "dry_multiplier": (0.8, 0.0),
+            "dry_penalty_last_n": (2048, None),
+        }
+
+    def test_no_mismatch_when_the_server_applied_every_setting(self) -> None:
+        dry = {"dry_multiplier": 0.8, "dry_base": 1.75}
+        # The server reports floats it was sent as floats, and extra fields are ignored.
+        slot_params = {"dry_multiplier": 0.800000011920929, "dry_base": 1.75, "top_k": 40}
+        assert sampler_mismatches(slot_params, dry) == {}
 
 
 class TestReasoningControl:

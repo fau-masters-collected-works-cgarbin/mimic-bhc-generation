@@ -40,17 +40,23 @@ LOCAL_BASE_URL = "http://127.0.0.1:8080/v1"
 _REASONING_OFF = {"chat_template_kwargs": {"enable_thinking": False}}
 
 
+class SamplerNotAppliedError(RuntimeError):
+    """The server ignored sampler settings the run requested."""
+
+
 @dataclass(frozen=True)
 class InferenceConfig:
     """Inference parameters for LLM calls.
 
     frequency_penalty breaks degenerate repetition loops while staying
-    deterministic at temperature 0.
+    deterministic at temperature 0. ``dry_sampler`` holds llama-server's DRY
+    request parameters, or None to leave DRY off.
     """
 
     temperature: float
     max_completion_tokens: int
     frequency_penalty: float
+    dry_sampler: dict[str, float] | None = None
 
 
 @dataclass(frozen=True)
@@ -195,6 +201,38 @@ def probe_on_device_server(base_url: str, *, timeout_s: float = 5.0) -> dict:
     return info
 
 
+def sampler_mismatches(
+    slot_params: dict, dry_sampler: dict[str, float]
+) -> dict[str, tuple[float, float | None]]:
+    """Each requested DRY setting the server did not apply, as (requested, applied).
+
+    The server reports floats at single precision, so values are compared with a
+    tolerance.
+    """
+    mismatches = {}
+    for key, requested in dry_sampler.items():
+        applied = slot_params.get(key)
+        if applied is None or abs(applied - requested) > 1e-6 * max(1.0, abs(requested)):
+            mismatches[key] = (requested, applied)
+    return mismatches
+
+
+def verify_sampler_applied(base_url: str, inference: InferenceConfig) -> None:
+    """Raise if the server did not apply the last request's DRY settings.
+
+    llama-server accepts a misspelled sampler key without error, so reading the
+    slot's parameters back is the only proof the setting took effect.
+    """
+    if inference.dry_sampler is None:
+        return
+    root = base_url.rstrip("/").removesuffix("/v1")
+    slot_params = httpx.get(root + "/slots", timeout=10).json()[0].get("params", {})
+    mismatches = sampler_mismatches(slot_params, inference.dry_sampler)
+    if mismatches:
+        msg = f"llama-server did not apply the DRY settings (requested, applied): {mismatches}"
+        raise SamplerNotAppliedError(msg)
+
+
 def call_llm(
     prompt: PromptResult,
     model_alias: str,
@@ -220,7 +258,7 @@ def call_llm(
             temperature=inference.temperature,
             max_completion_tokens=inference.max_completion_tokens,
             frequency_penalty=inference.frequency_penalty,
-            extra_body=_REASONING_OFF,
+            extra_body={**_REASONING_OFF, **(inference.dry_sampler or {})},
         )
         elapsed_ms = (time.perf_counter() - start) * 1000
         return _parse_response(response, latency_ms=elapsed_ms)

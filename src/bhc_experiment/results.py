@@ -15,7 +15,7 @@ from pathlib import Path
 
 import yaml
 
-from bhc_experiment.config import INFERENCE, CliParameters
+from bhc_experiment.config import CliParameters, inference_for
 from bhc_experiment.llm import LlmResult
 
 RUN_RECORD_FILENAME = "run_record.yaml"
@@ -151,7 +151,7 @@ def create_model_dir_and_record(  # noqa: PLR0913
         "git_dirty": git_dirty,
         "prepared_commit": prepared_commit,
         "cli_parameters": asdict(cli_parameters),
-        "inference": asdict(INFERENCE),
+        "inference": asdict(inference_for(cli_parameters.model)),
         "inputs": inputs,
         "runtime_environment": runtime_environment,
         "total_admissions": total_admissions,

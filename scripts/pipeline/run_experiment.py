@@ -25,17 +25,19 @@ import yaml
 
 from bhc_experiment.config import (
     DEDUPLICATIONS,
-    INFERENCE,
     PROMPT_VARIANTS,
     CliParameters,
+    inference_for,
 )
 from bhc_experiment.llm import (
     LOCAL_BASE_URL,
     LlmResult,
     ReasoningNotDisabledError,
+    SamplerNotAppliedError,
     call_llm,
     create_llm_client,
     probe_on_device_server,
+    verify_sampler_applied,
 )
 from bhc_experiment.loader import AdmissionBundle
 from bhc_experiment.prepared_store import prepared_commit
@@ -59,7 +61,7 @@ from bhc_experiment.results import (
 )
 from bhc_experiment.run_inputs import describe_inputs, run_inputs
 from mimic_data_prep.mimic import PREPARED_DIR, RESULTS_DIR
-from mimic_data_prep.models import MODEL_KEYS, model_by_key
+from mimic_data_prep.models import MODEL_KEYS, model_by_alias, model_by_key
 
 logging.basicConfig(
     level=logging.INFO,
@@ -195,10 +197,13 @@ def _generate(  # noqa: PLR0913
     prompt_result = None
     try:
         prompt_result = build_prompt(load_bundle(hadm_id), variant)
-        llm_result = call_llm(prompt_result, model_alias, INFERENCE, llm_client)
-    except ReasoningNotDisabledError:
-        # The server is misconfigured, so every admission would reason. The
-        # admission is not recorded, so a resume retries it.
+        inference = inference_for(model_by_alias(model_alias).key)
+        llm_result = call_llm(prompt_result, model_alias, inference, llm_client)
+        verify_sampler_applied(LOCAL_BASE_URL, inference)
+    except (ReasoningNotDisabledError, SamplerNotAppliedError):
+        # The server is misconfigured, so every admission would reason or run
+        # with the wrong sampler. The admission is not recorded, so a resume
+        # retries it.
         mark_interrupted(model_dir)
         raise
     except Exception as e:  # noqa: BLE001
