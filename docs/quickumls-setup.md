@@ -186,7 +186,7 @@ Yim's list has to match `MEDCON_DEFAULT_TUIS` in this repository element for ele
 This check uses both. Switch to this repository first:
 
 ```bash
-cd ../phd-dissertation-data-prep
+cd ../mimic-bhc-generation
 uv run python -c "
 from bhc_experiment.umls_extractor import MEDCON_DEFAULT_TUIS
 print('\n'.join(sorted(MEDCON_DEFAULT_TUIS)))
