@@ -4,6 +4,7 @@ concepts, and each admission's record concepts.
 Usage:
     uv run python scripts/pipeline/prepare_inputs.py --dedup sentence
     uv run python scripts/pipeline/prepare_inputs.py --dedup none --smoke
+    uv run python scripts/pipeline/prepare_inputs.py --prompt-test
 
 Concepts are extracted in the main concept space, the one scoring reads.
 --concept-space extracts another for a robustness check, over the records
@@ -167,7 +168,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=DEDUPLICATIONS,
         help="Note deduplication, computed over the notes the filter keeps (default: sentence).",
     )
-    parser.add_argument("--smoke", action="store_true", help="Prepare the smoke cohort.")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--smoke", action="store_true", help="Prepare the smoke cohort.")
+    selection.add_argument(
+        "--prompt-test", action="store_true", help="Prepare the prompt test cohort."
+    )
     parser.add_argument(
         "--concept-space",
         default=MAIN_CONCEPT_SPACE,
@@ -186,7 +191,7 @@ def main() -> None:
 
     args = _parse_args()
     require_clean_tree()
-    cohort_file = config.cohort_file(smoke=args.smoke)
+    cohort_file = config.cohort_file(smoke=args.smoke, prompt_test=args.prompt_test)
 
     bundles = prepared_bundles(cohort_file, args.dedup, args.concept_space)
     params = extract_concepts(bundles, args.concept_space)

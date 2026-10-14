@@ -82,6 +82,7 @@ ignore = [
     "PLR0913", # synthetic-data helpers carry many parameters encoding the statistical model structure
     "S106",    # token_stratum kwarg trips the hardcoded-password heuristic
     "PD008",   # tests mutate single cells via .at[] to keep object dtypes intact
+    "S311",    # random.Random used for deterministic sampling, not crypto
 ]
 "src/bhc_experiment/evaluator.py" = [
     "BLE001",    # evaluate() intentionally catches all exceptions to skip failed metrics
@@ -131,6 +132,9 @@ ignore = [
     "ERA001",  # pandas equivalents in comments are documentation, not dead code
     "PLR0915", # analysis scripts are sequential steps in one main()
     "PLR2004", # magic values in sanity checks and thresholds are readable inline
+]
+"scripts/pipeline/select_prompt_test_cohort.py" = [
+    "S311",    # random.Random used for deterministic sampling, not crypto
 ]
 
 [tool.ruff.format]

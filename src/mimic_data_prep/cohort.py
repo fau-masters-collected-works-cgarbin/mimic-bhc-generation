@@ -206,7 +206,7 @@ def compute_mesh_age_group(age: int) -> str:
 class Cohort:
     """A cohort file: metadata dict plus a list of typed admissions.
 
-    Metadata stays an untyped dict because subset cohort files (smoke, pilot)
+    Metadata stays an untyped dict because subset cohort files (smoke, prompt test)
     have different layouts. Admissions share a schema across cohort files, so
     that is where typing is worthwhile.
     """

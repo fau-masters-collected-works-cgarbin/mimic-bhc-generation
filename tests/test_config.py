@@ -2,12 +2,17 @@
 
 import pytest
 
-from bhc_experiment.config import SMOKE_COHORT_FILE, CliParameters
+from bhc_experiment.config import PROMPT_TEST_COHORT_FILE, SMOKE_COHORT_FILE, CliParameters
 
 
 class TestCliParameters:
     def test_smoke_runs_on_the_smoke_cohort(self) -> None:
         assert CliParameters(prompt="unformatted", smoke=True).cohort_file == SMOKE_COHORT_FILE
+
+    def test_prompt_test_runs_on_the_prompt_test_cohort(self) -> None:
+        assert (
+            CliParameters(prompt="brief", prompt_test=True).cohort_file == PROMPT_TEST_COHORT_FILE
+        )
 
     @pytest.mark.parametrize(
         ("cli_parameters", "name"),
@@ -21,15 +26,28 @@ class TestCliParameters:
                 "oracle-n-2-no-dedup",
             ),
             (CliParameters(prompt="unformatted", smoke=True), "smoke"),
+            (CliParameters(prompt="brief", prompt_test=True), "prompt-test"),
+            (
+                CliParameters(prompt="brief", prompt_test=True, deduplication="none"),
+                "prompt-test-no-dedup",
+            ),
         ],
     )
     def test_selection_name(self, cli_parameters: CliParameters, name: str) -> None:
         assert cli_parameters.selection_name == name
 
-    def test_oracle_selection_on_the_smoke_cohort_raises(self) -> None:
-        # Its directory would be named smoke while the model saw a reduced input.
-        with pytest.raises(ValueError, match="smoke"):
-            CliParameters(prompt="brief", oracle_n=2, smoke=True)
+    @pytest.mark.parametrize(
+        "selections",
+        [
+            {"oracle_n": 2, "smoke": True},
+            {"oracle_n": 2, "prompt_test": True},
+            {"smoke": True, "prompt_test": True},
+        ],
+    )
+    def test_more_than_one_selection_raises(self, selections: dict) -> None:
+        # The directory names one selection, so a second would be mislabeled.
+        with pytest.raises(ValueError, match="at most one"):
+            CliParameters(prompt="brief", **selections)
 
     def test_run_name_is_the_selection_and_prompt(self) -> None:
         cli_parameters = CliParameters(prompt="thorough", oracle_n=2)

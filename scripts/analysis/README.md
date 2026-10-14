@@ -12,6 +12,7 @@ The run folder is the only argument:
 uv run python scripts/analysis/quality.py <run-folder>
 uv run python scripts/analysis/completion.py <run-folder>
 uv run python scripts/analysis/cost.py <run-folder>
+uv run python scripts/analysis/length.py <run-folder>
 ```
 
 | Script | Aspect | Report | Figures |
@@ -19,6 +20,7 @@ uv run python scripts/analysis/cost.py <run-folder>
 | `quality.py` | Quality vs admission size | `quality.md` | `quality_vs_size.png` |
 | `completion.py` | Completion and non-termination | `completion.md` | `completion_rate.png`, `output_tokens.png` |
 | `cost.py` | Cost and latency | `cost.md` | `latency_vs_size.png`, `cost_quality_frontier.png` |
+| `length.py` | Output length against reference length | `length.md` | none |
 
 Reports are stored in the run folder, figures in `<run-folder>/assets/`, referenced from the report by relative path. The scripts are independent. Run them in any order. A re-run rewrites only that script's own outputs.
 

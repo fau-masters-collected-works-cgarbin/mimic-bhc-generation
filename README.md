@@ -207,6 +207,10 @@ uv run streamlit run app/results_app.py
 
 What to check: the sidebar lists the smoke run's model, the Run Explorer page loads its summary table, and the per-admission detail view renders generated and reference BHC side by side.
 
+#### Testing a prompt change
+
+A change to the prompt wording runs on the prompt test cohort before the full experiment. See [Appendix: testing prompt changes](docs/specs/prompt-builder-design.md#appendix-testing-prompt-changes) for the commands and the pass criteria.
+
 #### Running across the three models
 
 `run_experiment.py` generates for one model under one set of settings. What varies between runs is a command-line flag. Everything else is a constant in `src/bhc_experiment/config.py`.
@@ -218,8 +222,9 @@ What to check: the sidebar lists the smoke run's model, the Run Explorer page lo
 | `--dedup` | `sentence`, `none` | `sentence` |
 | `--oracle-n` | the oracle's neighbor radius, 0 or more | all records |
 | `--smoke` | the smoke cohort | the experiment cohort |
+| `--prompt-test` | the prompt test cohort | the experiment cohort |
 
-Results are stored in the experiment data repo (`phd-dissertation-experiment-results`) as `<selection>/<prompt>-prompt/<model>`. The selection is `all-records`, `oracle-n-<N>`, or `smoke`, with `-no-dedup` appended under `--dedup none`. Rerunning resumes a partial run at the same clean commit and skips a completed one. To redo a completed run, delete its model directory. Replaced runs live in the results repo's git history.
+Results are stored in the experiment data repo (`phd-dissertation-experiment-results`) as `<selection>/<prompt>-prompt/<model>`. The selection is `all-records`, `oracle-n-<N>`, `smoke`, or `prompt-test`, with `-no-dedup` appended under `--dedup none`. Rerunning resumes a partial run at the same clean commit and skips a completed one. To redo a completed run, delete its model directory. Replaced runs live in the results repo's git history.
 
 llama-server hosts one model at a time. `run_all_models.sh` launches each model in turn and passes its flags to `run_experiment.py`:
 
@@ -407,6 +412,8 @@ flowchart LR
     AUDIT --> AUD["stdout: pool vs cohort balance,<br>PASS/RESAMPLE verdict"]
     EXP --> SMOKE["select_smoke_cohort.py"]
     SMOKE --> SC["smoke_cohort.json"]
+    EXP --> PROMPTTEST["select_prompt_test_cohort.py"]
+    PROMPTTEST --> PTC["prompt_test_cohort.json"]
 ```
 
 The funnel narrows MIMIC-III's 58,976 hospital admissions down to the sampled cohort:
@@ -460,7 +467,7 @@ flowchart TB
 ```mermaid
 flowchart TB
     subgraph Inputs["run inputs"]
-        FLAGS["CLI flags<br>(prompt, dedup, oracle N, smoke)"]
+        FLAGS["CLI flags<br>(prompt, dedup, oracle N, smoke, prompt test)"]
         REG["model registry<br>(models.py)"]
     end
 

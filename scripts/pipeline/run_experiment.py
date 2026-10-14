@@ -364,6 +364,7 @@ def main() -> None:
         "Omit to feed every record.",
     )
     selection.add_argument("--smoke", action="store_true", help="Run the smoke cohort.")
+    selection.add_argument("--prompt-test", action="store_true", help="Run the prompt test cohort.")
     parser.add_argument(
         "--yes", action="store_true", help="Skip the confirmation prompt (for unattended runs)."
     )
@@ -375,6 +376,7 @@ def main() -> None:
             deduplication=args.dedup,
             oracle_n=args.oracle_n,
             smoke=args.smoke,
+            prompt_test=args.prompt_test,
         )
     except ValueError as e:
         parser.error(str(e))

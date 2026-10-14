@@ -114,6 +114,7 @@ CONCEPT_SPACES: dict[str, dict] = {
 
 EXPERIMENT_COHORT_FILE = "experiment_cohort.json"
 SMOKE_COHORT_FILE = "smoke_cohort.json"
+PROMPT_TEST_COHORT_FILE = "prompt_test_cohort.json"
 # The eligible admissions the cohort is sampled from.
 FILTERED_POOL_FILE = "filtered_pool.json"
 
@@ -128,9 +129,13 @@ INFERENCE = InferenceConfig(temperature=0.0, max_completion_tokens=4096, frequen
 ORACLE_STRATA: tuple[str, ...] = TOKEN_STRATA[TOKEN_STRATA.index("32K") :]
 
 
-def cohort_file(*, smoke: bool) -> str:
+def cohort_file(*, smoke: bool, prompt_test: bool = False) -> str:
     """The cohort a run or a preparation reads."""
-    return SMOKE_COHORT_FILE if smoke else EXPERIMENT_COHORT_FILE
+    if smoke:
+        return SMOKE_COHORT_FILE
+    if prompt_test:
+        return PROMPT_TEST_COHORT_FILE
+    return EXPERIMENT_COHORT_FILE
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -146,22 +151,26 @@ class CliParameters:
     deduplication: str = "sentence"
     oracle_n: int | None = None
     smoke: bool = False
+    # Defaults to False so run records written before the prompt test cohort still load.
+    prompt_test: bool = False
 
     def __post_init__(self) -> None:
         # The directory is named for the selection, so it can name only one.
-        if self.oracle_n is not None and self.smoke:
-            msg = "oracle_n and smoke cannot both be set"
+        if sum([self.oracle_n is not None, self.smoke, self.prompt_test]) > 1:
+            msg = "set at most one of oracle_n, smoke, prompt_test"
             raise ValueError(msg)
 
     @property
     def cohort_file(self) -> str:
-        return cohort_file(smoke=self.smoke)
+        return cohort_file(smoke=self.smoke, prompt_test=self.prompt_test)
 
     @property
     def selection_name(self) -> str:
         """The top-level results directory. Sentence dedup is the default, so only none shows."""
         if self.smoke:
             name = "smoke"
+        elif self.prompt_test:
+            name = "prompt-test"
         elif self.oracle_n is None:
             name = "all-records"
         else:

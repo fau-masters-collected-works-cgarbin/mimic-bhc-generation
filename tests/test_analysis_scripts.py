@@ -16,6 +16,7 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 
 import completion as completion_script  # noqa: E402
 import cost as cost_script  # noqa: E402
+import length as length_script  # noqa: E402
 import quality as quality_script  # noqa: E402
 
 from bhc_experiment import metrics, reporting  # noqa: E402
@@ -152,3 +153,26 @@ class TestQualityFigureGolden:
             [1.06, 0.52],
             [1.06, 0.54],
         ]
+
+
+class TestLengthSummaryGolden:
+    """A wrong n or a ratio under the wrong stratum would read as a normal length gate."""
+
+    def test_per_stratum_and_overall_rows(self) -> None:
+        ratios = pd.DataFrame(
+            {
+                "model": ["llama", "gemma", "gemma", "gemma", "gemma"],
+                "token_stratum": ["4K", "8K", "4K", "4K", "4K"],
+                "ratio": [0.6, 1.0, 0.9, 0.2, 0.4],
+            }
+        )
+        expected = pd.DataFrame(
+            {
+                "model": ["gemma", "gemma", "gemma", "llama", "llama"],
+                "token_stratum": ["4K", "8K", "All", "4K", "All"],
+                "n": [3, 1, 4, 1, 1],
+                "median_ratio": [0.4, 1.0, 0.65, 0.6, 0.6],
+                "under_half": [2, 0, 2, 0, 0],
+            }
+        )
+        assert_frame_equal(length_script.length_summary(ratios), expected, check_dtype=False)

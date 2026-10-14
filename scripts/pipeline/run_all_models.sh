@@ -13,13 +13,14 @@
 #   scripts/pipeline/run_all_models.sh --prompt brief
 #   scripts/pipeline/run_all_models.sh --prompt brief --oracle-n 2
 #   scripts/pipeline/run_all_models.sh --prompt unformatted --smoke
+#   scripts/pipeline/run_all_models.sh --prompt brief --prompt-test
 
 set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/serve_across_models.sh"
 
 if (($# == 0)); then
-  log "Usage: $0 --prompt <variant> [--dedup none] [--oracle-n N | --smoke]" >&2
+  log "Usage: $0 --prompt <variant> [--dedup none] [--oracle-n N | --smoke | --prompt-test]" >&2
   exit 2
 fi
 
