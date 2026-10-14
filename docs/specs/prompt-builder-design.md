@@ -79,6 +79,22 @@ The change passes when all three criteria hold on the worst model:
 
 Concept recall and precision show direction only. Fourteen admissions are too few to read the size of a difference.
 
+### Failing fast
+
+Admissions run in cohort-file order, which runs from 4K to 112K, and the 96K and 112K admissions take about 80% of each model's time. `length.py` reads a partial run, because the run record is written before generation starts. Two checks on one model catch a failed change before the full 4.5 hours:
+
+1. **Run `brief` on Gemma alone.** Gemma fell furthest below the reference length in July.
+
+   ```bash
+   scripts/setup/serve_local_llm.sh gemma_4_e4b
+   uv run python scripts/pipeline/run_experiment.py --model gemma_4_e4b --prompt brief --prompt-test
+   ```
+
+2. **After about 2 minutes, check the short strata.** Once 4K through 16K finish, run `length.py` on the run folder. If those rows miss the length target, the change fails. Stop the run and revise the wording.
+3. **After about 28 minutes, check every stratum.** Gemma's run is complete. The 96K and 112K rows show whether the target holds when the instructions sit far from where the model starts writing. If they hold, run the full loop above. It skips Gemma's completed `brief` run.
+
+The run log does not flag a generation that hits the output cap. `length.md` counts those generations, so the same partial check on Gemma's `thorough` run shows the risk early.
+
 When the prompt test is done, move its runs to the results repo's `archive/one-off/`.
 
 ## Appendix: vendor guidance on in-prompt formatting
