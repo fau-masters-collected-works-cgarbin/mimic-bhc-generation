@@ -47,30 +47,33 @@ Decision: pending.
 
 ## Appendix: testing prompt changes
 
-A change to the prompt wording runs on the prompt test cohort before the full experiment. The prompt test takes about 1.5 hours per variant across the three models, where the full run takes about 9.
+A change to the prompt wording runs on the prompt test cohort before the full experiment. The prompt test takes about 4.5 hours for the three variants across the three models, where the full run takes about 27.
 
 The prompt test cohort has 14 admissions, one narrative and one domain-organized reference from each token stratum, drawn by `scripts/pipeline/select_prompt_test_cohort.py`. Wording that meets the length target on a 4K record can miss it on a 112K record, where the instructions sit far from where the model starts writing. The two formats get different format paragraphs under `brief`.
 
 The admissions come from the scored experiment cohort, because only those admissions have earlier generations to compare against. The prompt test therefore gates on output length and format adherence only. Revising wording to raise the prompt test's metric scores would tune the prompt on scored admissions.
 
-Commit the change before running. A run records its commit and resumes only at a clean one. Run each variant whose text changed:
+Commit the change before running. A run records its commit and resumes only at a clean one. Run every variant. The variants share all but one or two paragraphs, so a change to the wording almost always reaches all three:
 
 ```bash
 uv run python scripts/pipeline/select_prompt_test_cohort.py
 uv run python scripts/pipeline/prepare_inputs.py --prompt-test
 
-scripts/pipeline/run_all_models.sh --prompt brief --prompt-test
-scripts/pipeline/run_all_models.sh --prompt unformatted --prompt-test
+for prompt in brief unformatted thorough; do
+  scripts/pipeline/run_all_models.sh --prompt $prompt --prompt-test
+done
 
 RESULTS=../phd-dissertation-experiment-results/results
-uv run python scripts/pipeline/score_results.py $RESULTS/prompt-test/brief-prompt
-uv run python scripts/analysis/length.py $RESULTS/prompt-test/brief-prompt
-uv run python scripts/analysis/completion.py $RESULTS/prompt-test/brief-prompt
+for prompt in brief unformatted thorough; do
+  uv run python scripts/pipeline/score_results.py $RESULTS/prompt-test/$prompt-prompt
+  uv run python scripts/analysis/length.py $RESULTS/prompt-test/$prompt-prompt
+  uv run python scripts/analysis/completion.py $RESULTS/prompt-test/$prompt-prompt
+done
 ```
 
-Repeat scoring and the two reports for every run. The change passes when all three hold on the worst model:
+The change passes when all three criteria hold on the worst model:
 
-- **Length.** The median ratio of generated to reference words is between 0.7 and 1.3 in `length.md`. The per-stratum rows show whether the long strata keep the target.
+- **Length under `brief` and `unformatted`.** The median ratio of generated to reference words is between 0.7 and 1.3 in `length.md`. The per-stratum rows show whether the long strata keep the target. `thorough` has no length target, so its ratio is reported without a gate.
 - **Format adherence under `brief`.** Narrative outputs have no headers. Domain-organized outputs use `#` problem headers. Check in the results viewer.
 - **No regressions.** No generation hits the output cap (`completion.md`), restates the section title, or writes a line saying information is not documented.
 
