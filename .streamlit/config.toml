@@ -1,0 +1,5 @@
+[server]
+# Streamlit's file watcher scans all loaded modules and trips on transformers
+# submodules that optionally import torchvision (not installed). Setting this
+# to "none" silences the noise at the cost of auto-reload on save.
+fileWatcherType = "none"
