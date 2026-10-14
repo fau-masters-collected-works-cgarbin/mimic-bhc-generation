@@ -8,7 +8,7 @@ Include all active clinical problems managed during the admission, including chr
 
 State the discharge disposition and any follow-up plans only when the records document them. If they are not documented, omit them. Do not write a line or section noting that this information is absent or not documented.
 
-Report only what is documented in the provided records. Do not synthesize clinical reasoning, differential diagnoses, or causal interpretations beyond what is explicitly stated in the notes. Do not infer medication doses unless they are documented in the records.
+Report only what is documented in the provided records. Do not synthesize clinical reasoning, differential diagnoses, or causal interpretations beyond what is explicitly stated in the notes. Do not infer medication doses unless they are documented in the records. Do not label a lab abnormality as a diagnosis unless the notes name it or the records show it was treated. Never write that information is missing from the records. Leave it out.
 
 Output only the Brief Hospital Course text. Do not begin with a title or heading that restates the section name.
 
@@ -20,5 +20,9 @@ Patient: {age} year old {gender}
 Admitted: {admit_time}
 Discharged: {discharge_time}
 
-Medical records:
+Start of medical records.
 {admission_data}
+
+End of medical records.
+
+Write the Brief Hospital Course for this admission now, following the instructions above. Carry the course through the final hospital days. Output only the Brief Hospital Course text, with no title.

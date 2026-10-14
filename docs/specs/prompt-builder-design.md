@@ -26,9 +26,76 @@ Template files live in `prompts/`. See `prompts/README.md` for the instruction-o
 
 **One domain template for all numbering conventions.** The delimiter ablation found no measurable score effect from matching the prompt's delimiter to the ground truth. One template serves both conventions. `numbering_convention` stays on `BhcStructure` for cohort profiling and ground-truth provenance. See `docs/archive/prompt-format-delimiter-investigation.md` for the evidence.
 
+## DRY sampler
+
+Llama 3.2 3B generates with llama.cpp's DRY sampler on top of the shared settings. Gemma and Qwen do not. The parameters are `DRY_SAMPLER` in `src/bhc_experiment/config.py`. The per-model switch is `dry_sampler` in `src/mimic_data_prep/models.py`.
+
+**What it fixes.** Generations that reach the 4,096-token output cap are repetition loops. They start early, at a median of about 150 tokens, and repeat a two-paragraph cycle or the whole problem list every 200 to 700 tokens. The frequency penalty counts single tokens over the last 64 tokens only, so it cannot see the previous cycle. DRY penalizes extending a token sequence that already appears in its window. The penalty grows exponentially with the length of the repeat. With multiplier 0.8, base 1.75 and allowed length 3, a 4-token repeat costs 1.4 logits and an 8-token repeat costs 13.1. The 2,048-token window covers the longest loop period.
+
+**Evidence.** A test on Llama compared the current settings with and without DRY on 17 admissions where Llama had truncated before and on the 14 prompt test admissions:
+
+| Set | Condition | Truncated | Median repeated 8-gram rate | Median words |
+| --- | --- | ---: | ---: | ---: |
+| Loop-prone (17) | without DRY | 4 | 0.225 | 562 |
+| Loop-prone (17) | with DRY | 0 | 0.000 | 434 |
+| Prompt test (14) | without DRY | 2 | 0.132 | 440 |
+| Prompt test (14) | with DRY | 0 | 0.000 | 310 |
+
+DRY ended all 6 loops that reproduced and caused no new truncation. Concept recall did not fall: the paired difference was +0.010 (SD 0.054) on the prompt test set and +0.018 (SD 0.053) on the loop-prone set. An allowed length of 5 let 2 of 4 loops through.
+
+**Faithfulness checks.** Because the DRY window includes the end of the prompt, DRY could push the model away from reproducing record text exactly. Two checks on 25 paired admissions found no harm beyond noise:
+
+- **Drug names and numbers.** Near-miss spellings plus synonym swaps of drug mentions changed by -0.023 (SD 0.103). Numbers absent from the input changed by -0.024 (SD 0.110).
+- **End of the stay.** The share of output concepts drawn from the last 2,048 tokens of the records changed by -0.003 (SD 0.095).
+
+With about 25 pairs, the checks rule out only shifts larger than about 0.05. A rare single error, such as one wrong dose in 30 outputs, would go unseen. The six admissions where DRY changed the output most, the baseline loops, have no paired comparison.
+
+**Costs.** DRY also trims outputs that did not repeat, by a median of about 10%. It shortens multi-word prescription names, keeping the drug word and dropping the rest, in 12 of 19 admissions with such names. Concepts echoed from the prompt text rose slightly, from 1.50 to 1.86 per output.
+
+**Why Llama only.** Every loop and every check was on Llama. Gemma never truncated. Qwen truncated 0 to 3 times per 116 admissions. For both, DRY would mostly add its costs. The price is a confound: Llama's completion rate and output length come from a different sampler than the other two models', and cross-model statements about either name it. Qwen's rare loops stay and are reported.
+
+**Verification.** llama-server accepts a misspelled sampler key without error. After every generation, `verify_sampler_applied` reads the slot's parameters back from `/slots` and stops the run if a DRY setting was not applied.
+
 ## Prompt change log
 
 Each entry records one change to the prompt wording, its prompt test result, and the decision. Newest first. The commit of each tested change is in the prompt test run records, under `git_commit`.
+
+### 2026-10-15: records markers, closing reminder, lab-label guard, filler ban
+
+Changes, identical in every template that has the paragraph:
+
+- **Records markers.** The records block opens with "Start of medical records.", which replaces the "Medical records:" label, and closes with "End of medical records.". A note's free text runs across several paragraphs and often ends with directions, so without an end marker the closing reminder reads like another paragraph of the last note. A matching pair marks one block, where a label reads as a heading. The markers are plain text, which keeps the plain-prose layout the vendor-guidance appendix chose over tags.
+- **Closing reminder** (new paragraph after the end marker). "Write the Brief Hospital Course for this admission now, following the instructions above. Carry the course through the final hospital days. Output only the Brief Hospital Course text, with no title." It restates neither the length target nor the format, so each variant still differs from `brief` in one paragraph.
+- **Grounding paragraph.** Adds "Do not label a lab abnormality as a diagnosis unless the notes name it or the records show it was treated. Never write that information is missing from the records. Leave it out." The filler ban names missing information, which leaves documented uses such as "etiology unknown" alone.
+
+Reason: an aggregate inspection of the previous change's 126 generations, with scripts that never print text, found these failures:
+
+- **Instructions lose force on long inputs.** 17 of the 18 title echoes came at 64K and above. Llama echoed on 13 of 18 long generations against 1 of 24 short ones. Across the 1,044 July generations, the echo rate rose from 2% at 4K to 53% at 112K. The instructions sit in the system message, ahead of up to about 100K tokens of records.
+- **Llama drops the end of long stays.** It recalled 2% of reference concepts that first appear in the last fifth of a long record, against 25% for Gemma and 40% for Qwen.
+- **The models turn lab values into diagnosis labels** that appear in neither the input nor the reference (anemia in 12 admissions, thrombocytopenia in 9, hypomagnesemia in 7).
+- **"Not documented" phrasing moved inside sentences.** The standalone lines the disposition paragraph bans were nearly gone, but the phrasing appeared in 24% of `thorough` outputs.
+
+Each candidate change was screened for overfitting, by where its evidence came from. A change that answers a model failure, or that follows from the task definition, was kept. A change motivated by overlap with the references would fit the prompt to how MIMIC authors write, and was dropped:
+
+- **Dropped: an opening sentence with age, sex and comorbidities.** It is reference style. The comorbidities the references mention are mostly absent from the input, so asking for them invites fabrication.
+- **Dropped: separate length targets for narrative and domain-organized output.** They would add a second reference-derived parameter on top of the format routing, which already uses the ground-truth format.
+- **Dropped: medication instructions.** Medications were the weakest concept type on all three models: recall of drug concepts present in the input was 0.16 to 0.41, against 0.41 to 0.63 for diseases. Both versions considered, "name the chronic medications continued" and "state significant medication changes", rest on that overlap with the references. A hospital course describes the treatment for each problem, which the coverage paragraph already asks for as management decisions. Medication changes as such belong to the discharge medication list. The gap is reported as a finding about how small models handle medications.
+- **Dropped: "end with the discharge disposition".** The discharge summary is excluded from the input, and disposition terms appear in the input notes of only 38 of the 116 cohort admissions, against 63 references. Gemma stating disposition less often than in July (57% against 93% under `brief`) is consistent with the July outputs inventing it.
+- **Narrowed: the lab-label guard.** 78 of the 116 admissions have imaging-only notes, where a managed problem shows up only as labs plus prescriptions. The guard keeps a label when the records show the abnormality was treated.
+
+Repetition loops are left to the sampler. The frequency penalty sees only the last 64 tokens, while the loops repeat every 200 to 700 tokens. Llama now generates with the DRY sampler (see [DRY sampler](#dry-sampler)), so this change's prompt test runs with it.
+
+Expected effects, against the previous prompt test (commit `62e1d60`, 126 generations):
+
+- **Title echoes fall** from 18, all but one at 64K and above. The closing reminder targets them.
+- **Llama truncations fall** from 4. DRY targets them.
+- **Filler phrasing inside sentences falls.** The general filler ban targets it. The measure counts phrases saying information is missing from the records ("not documented", "not specified", "no information available", "not mentioned") inside a sentence of at least 12 words. "Unknown" is left out of the measure, as it is out of the instruction.
+
+A directional pass is a screen. With 14 admissions, a count can fall by one or two through noise, so a pass says the change shows no sign of being wrong. The full 116-admission run confirms an effect. This is also the third round on the same 14 admissions, and the inspection behind this change read their generations. The title-echo evidence comes mostly from the 1,044 July generations, but a drop on these 14 could partly be regression to the mean.
+
+Prompt test: pending.
+
+Decision: pending.
 
 ### 2026-10-14: length target as an instruction
 
@@ -36,9 +103,35 @@ Change, in `brief` and `unformatted`: "A typical Brief Hospital Course runs 250 
 
 Reason: under the descriptive wording, Gemma's median output was 247.5 words over the first 6 prompt test admissions, just under the target. Three outputs fell below 250 words, two of them single-paragraph narratives at 4K and 8K.
 
-Prompt test: pending.
+Prompt test: passed the length gate on every variant and model (commit `62e1d60`, 126 generations, no failures). Median generated words:
 
-Decision: pending.
+| Variant | Gemma | Llama | Qwen | Strata under 250 |
+| --- | ---: | ---: | ---: | --- |
+| `brief` | 328 | 332 | 418 | Llama 16K |
+| `unformatted` | 263.5 | 266 | 344.5 | Gemma 4K, 16K, 32K. Llama 4K, 16K |
+| `thorough` (no target) | 358.5 | 378 | 480 | none |
+
+Under `brief`, every narrative output had no headers and every domain-organized output used `#` headers, except one Qwen output at 112K that used bold lines (2 of 7 in July). Counts on the same 14 admissions, new against July:
+
+| Variant | Model | Truncated | Title echo | "Not documented" |
+| --- | --- | --- | --- | --- |
+| `brief` | Gemma | 0 / 0 | 0 / 6 | 0 / 3 |
+| `brief` | Llama | 1 / 0 | 4 / 8 | 0 / 0 |
+| `brief` | Qwen | 0 / 0 | 1 / 4 | 0 / 0 |
+| `unformatted` | Gemma | 0 / 0 | 0 / 0 | 0 / 0 |
+| `unformatted` | Llama | 2 / 0 | 5 / 6 | 1 / 0 |
+| `unformatted` | Qwen | 0 / 0 | 3 / 0 | 1 / 1 |
+| `thorough` | Gemma | 0 / 0 | 0 / 3 | 0 / 4 |
+| `thorough` | Llama | 1 / 1 | 5 / 7 | 2 / 0 |
+| `thorough` | Qwen | 1 / 0 | 0 / 3 | 2 / 0 |
+
+The "not documented" count matches the phrase anywhere. Most new hits sit inside longer sentences. Every truncation is a repetition loop that hit the 4096-token cap. Llama truncated 4 to 12 of 116 admissions under the July prompts, so 1 or 2 of 14 cannot be told apart from its base rate. Qwen's 3 title echoes under `unformatted` are new: July had none in 116, and all 3 fall at 96K and 112K.
+
+Concept scores moved within noise. scispaCy concept F1 changed by -0.021 to +0.022 against July on every variant and model, with paired standard deviations of 0.046 to 0.079. Under `brief`, recall rose on all three models (Gemma 0.144 to 0.187, Llama 0.120 to 0.138, Qwen 0.203 to 0.212) while precision fell, so F1 stayed flat. Only Gemma's recall gain stands out from noise (paired mean +0.044, SD 0.061, 9 of 14 admissions higher). Llama's and Qwen's gains sit within it. The brevity wording held recall down somewhat, but removing it bought recall at a precision cost and left F1 unchanged.
+
+As written, the regression criterion fails: it allows no truncation and no title echo, and Llama truncates and echoes under every prompt. Read against each model's July counts, title echoes and "not documented" lines fell under `brief` and `thorough`.
+
+Decision: keep the length target. Address the failures the run exposed in the next change. Counts on 14 admissions cannot resolve a model's base rate for truncations, so the full run measures those rates.
 
 ### 2026-10-14: length target, physician role, no abbreviation instruction
 
@@ -81,11 +174,16 @@ for prompt in brief unformatted thorough; do
 done
 ```
 
-The change passes when all three criteria hold on the worst model:
+Each count below is compared with the previous prompt test, on the same 14 admissions. A fixed zero is a rate no model meets: Llama truncated and echoed the title under every prompt tested. The previous test differs from the new one only in the change under test, where the July runs differ in much more. At 14 admissions, one admission is the noise floor. Before the run, the change log entry names each count the change is expected to move, and in which direction.
+
+The change passes when all of these hold on the worst model:
 
 - **Length under `brief` and `unformatted`.** The median generated words (`median_words` in `length.md`) fall within the 250 to 600 target. The per-stratum rows show whether the long strata keep the target. The ratio of generated to reference words is context only, because output length barely follows reference length. `thorough` has no length target, so its lengths are reported without a gate.
-- **Format adherence under `brief`.** Narrative outputs have no headers. Domain-organized outputs use `#` problem headers. Check in the results viewer.
-- **No regressions.** No generation hits the output cap (`completion.md`), restates the section title, or writes a line saying information is not documented.
+- **Format adherence under `brief`.** Narrative outputs have no headers. Domain-organized outputs use `#` problem headers. No more outputs break this than in the previous test, plus one.
+- **No regressions.** For each model and variant, the count of generations that hit the output cap (`completion.md`), restate the section title, or write a standalone line saying information is not documented is no more than the previous test's count plus one.
+- **Expected effects.** Each count the change log entry names moves in the named direction, pooled over the three models.
+
+The report also gives each count's total over the nine model and variant cells, so a small rise spread over many cells shows, and each count against the July runs on the same admissions, so drift over several rounds shows. Both are context. Neither is a gate.
 
 Concept recall and precision show direction only. Fourteen admissions are too few to read the size of a difference.
 
