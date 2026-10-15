@@ -60,6 +60,66 @@ With about 25 pairs, the checks rule out only shifts larger than about 0.05. A r
 
 Each entry records one change to the prompt wording, its prompt test result, and the decision. Newest first. The commit of each tested change is in the prompt test run records, under `git_commit`.
 
+### Version comparison
+
+The versions, each as a change from the one before (-/+ for removed/added text):
+
+- **v0, July** (runs of record, archived under `archive/obsolete/`). The baseline.
+- **v1, attempt 1** (commit `2a1783e`). Tested on Gemma `brief` only, stopped after 7 admissions.
+  - Role: - "You are a clinical documentation specialist." + "You are the physician writing the discharge summary for this hospital admission."
+  - Task boundary: - "Do not re-summarize the history of present illness." + "…summarizes the clinical trajectory from presentation to discharge… Leave the history before presentation to the other sections of the discharge summary."
+  - Brevity (`brief`, `unformatted`): - "Prioritize brevity over completeness of detail." + "A typical Brief Hospital Course runs 250 to 600 words. Scale the length to the length and complexity of the stay."
+  - Abbreviations: - "Use standard clinical abbreviations (e.g., s/p, b/l, HD, POD, CXR, ACS, TTE, NGT, BID, prn)."
+  - Coverage: "Do not omit documented problems or management decisions." moves here from the grounding paragraph. Narrative templates + "including chronic conditions maintained on home medications".
+  - Disposition: - "woven into the narrative". Narrative templates + "and any follow-up plans".
+  - Title: + its own paragraph, "Output only the Brief Hospital Course text. Do not begin with a title or heading that restates the section name." It replaces the title clauses inside the format paragraphs.
+  - Order: role, boundary, content, coverage, disposition, grounding, output, format.
+  - Header: - "Service:", - "Length of stay:", + "Medical records:" before the records.
+  - Routing: the acute/chronic domain template is gone. Two of the 14 prompt test admissions used it in July.
+- **v2, attempt 2** (commit `62e1d60`). Brevity: - "A typical Brief Hospital Course runs 250 to 600 words." + "Write 250 to 600 words."
+- **v3, attempt 3** (commit `c6175d2`).
+  - Records: - "Medical records:" + "Start of medical records." before the records, + "End of medical records." after them.
+  - Closing reminder: + "Write the Brief Hospital Course for this admission now, following the instructions above. Carry the course through the final hospital days. Output only the Brief Hospital Course text, with no title."
+  - Grounding: + "Do not label a lab abnormality as a diagnosis unless the notes name it or the records show it was treated. Never write that information is missing from the records. Leave it out."
+  - Run setting: Llama generates with the DRY sampler. The wording is unchanged by it.
+
+`scripts/analysis/prompt_versions.py` in the `phd-dissertation-data-prep` repository produces the tables. They give means over the three models, on the prompt test admissions scored in v0, v2 and v3 for that variant and model (truncated outputs have no scores). Each cell is precision / recall / F1. Concept is scispaCy concepts in the MEDCON semantic types. MEDCON is the reference implementation, which stores only F1. Words is the median.
+
+`unformatted` (40 admission and model pairs):
+
+| Version | ROUGE-1 | ROUGE-L | SapBERT | Concept | MEDCON F1 | Words |
+| --- | --- | --- | --- | --- | ---: | ---: |
+| v0 | 0.428 / 0.209 / 0.266 | 0.212 / 0.103 / 0.131 | 0.727 / 0.715 / 0.721 | 0.165 / 0.116 / 0.126 | 0.170 | 164 |
+| v2 | 0.368 / 0.295 / 0.310 | 0.167 / 0.136 / 0.142 | 0.731 / 0.726 / 0.728 | 0.149 / 0.140 / 0.135 | 0.171 | 293 |
+| v3 | 0.365 / 0.304 / 0.312 | 0.161 / 0.137 / 0.139 | 0.734 / 0.731 / 0.732 | 0.155 / 0.157 / 0.143 | 0.180 | 306 |
+
+`brief` (41 pairs):
+
+| Version | ROUGE-1 | ROUGE-L | SapBERT | Concept | MEDCON F1 | Words |
+| --- | --- | --- | --- | --- | ---: | ---: |
+| v0 | 0.394 / 0.280 / 0.313 | 0.185 / 0.130 / 0.146 | 0.744 / 0.738 / 0.741 | 0.190 / 0.156 / 0.157 | 0.187 | 271 |
+| v2 | 0.342 / 0.336 / 0.323 | 0.151 / 0.149 / 0.143 | 0.733 / 0.732 / 0.733 | 0.154 / 0.180 / 0.154 | 0.174 | 369 |
+| v3 | 0.349 / 0.326 / 0.320 | 0.156 / 0.147 / 0.143 | 0.734 / 0.735 / 0.734 | 0.150 / 0.155 / 0.142 | 0.176 | 368 |
+
+`thorough` (38 pairs):
+
+| Version | ROUGE-1 | ROUGE-L | SapBERT | Concept | MEDCON F1 | Words |
+| --- | --- | --- | --- | --- | ---: | ---: |
+| v0 | 0.314 / 0.330 / 0.305 | 0.142 / 0.152 / 0.139 | 0.718 / 0.725 / 0.721 | 0.149 / 0.176 / 0.149 | 0.170 | 350 |
+| v2 | 0.298 / 0.328 / 0.296 | 0.136 / 0.151 / 0.135 | 0.705 / 0.716 / 0.711 | 0.148 / 0.178 / 0.149 | 0.167 | 378 |
+| v3 | 0.292 / 0.346 / 0.302 | 0.132 / 0.158 / 0.137 | 0.713 / 0.722 / 0.718 | 0.134 / 0.179 / 0.142 | 0.165 | 424 |
+
+v1 was never scored. On its 7 Gemma `brief` admissions, ROUGE-1 was 0.384 / 0.223 / 0.266 under v0, 0.338 / 0.281 / 0.296 under v1, 0.315 / 0.301 / 0.295 under v2 and 0.313 / 0.288 / 0.292 under v3. Median words were 178, 273, 306 and 279.
+
+What the tables show:
+
+- **`unformatted` gained the most.** From v0 to v3, recall rose on every metric: ROUGE-1 0.209 to 0.304, concept 0.116 to 0.157, SapBERT 0.715 to 0.731. ROUGE precision fell (0.428 to 0.365) as outputs nearly doubled in length. Concept precision fell less (0.165 to 0.155). F1 rose on every metric.
+- **`brief` traded precision for recall, and F1 did not move.** Recall rose at v2 and fell back at v3, all the way on concepts (0.156, 0.180, 0.155). Concept F1 ended below v0 (0.142 against 0.157), and MEDCON F1 too (0.176 against 0.187).
+- **`thorough` barely moved.** It was already long under v0. Concept precision fell at v3 (0.148 to 0.134) as outputs grew to a median of 424 words.
+- **v3's own effect is small next to v1 and v2's.** Most of the change from v0 came with the length target. v3 moved F1 by at most 0.012 on any variant and metric, the size of the noise at this sample size.
+
+These are 14 admissions per model. A change of about 0.02 in a mean is within noise for a single model, so the pattern across models and metrics carries more weight than any one cell. Every step bundles several changes, so no single instruction's effect can be read from the tables.
+
 ### 2026-10-15: records markers, closing reminder, lab-label guard, filler ban
 
 Changes, identical in every template that has the paragraph:
@@ -73,7 +133,7 @@ Reason: an aggregate inspection of the previous change's 126 generations, with s
 - **Instructions lose force on long inputs.** 17 of the 18 title echoes came at 64K and above. Llama echoed on 13 of 18 long generations against 1 of 24 short ones. Across the 1,044 July generations, the echo rate rose from 2% at 4K to 53% at 112K. The instructions sit in the system message, ahead of up to about 100K tokens of records.
 - **Llama drops the end of long stays.** It recalled 2% of reference concepts that first appear in the last fifth of a long record, against 25% for Gemma and 40% for Qwen.
 - **The models turn lab values into diagnosis labels** that appear in neither the input nor the reference (anemia in 12 admissions, thrombocytopenia in 9, hypomagnesemia in 7).
-- **"Not documented" phrasing moved inside sentences.** The standalone lines the disposition paragraph bans were nearly gone, but the phrasing appeared in 24% of `thorough` outputs.
+- **"Not documented" phrasing moved inside sentences.** The standalone lines the disposition paragraph bans were nearly gone, but the phrasing appeared inside sentences in 3 of 42 `thorough` outputs (7%), under the measure defined below. An earlier version of this entry gave 24%, which counted phrases per output over a broader phrase list that included "unknown".
 
 Each candidate change was screened for overfitting, by where its evidence came from. A change that answers a model failure, or that follows from the task definition, was kept. A change motivated by overlap with the references would fit the prompt to how MIMIC authors write, and was dropped:
 
@@ -91,11 +151,30 @@ Expected effects, against the previous prompt test (commit `62e1d60`, 126 genera
 - **Llama truncations fall** from 4. DRY targets them.
 - **Filler phrasing inside sentences falls.** The general filler ban targets it. The measure counts phrases saying information is missing from the records ("not documented", "not specified", "no information available", "not mentioned") inside a sentence of at least 12 words. "Unknown" is left out of the measure, as it is out of the instruction.
 
-A directional pass is a screen. With 14 admissions, a count can fall by one or two through noise, so a pass says the change shows no sign of being wrong. The full 116-admission run confirms an effect. This is also the third round on the same 14 admissions, and the inspection behind this change read their generations. The title-echo evidence comes mostly from the 1,044 July generations, but a drop on these 14 could partly be regression to the mean.
+A directional pass is a screen. With 14 admissions, a count can fall by one or two through noise, so a pass says the change shows no sign of being wrong. The full 116-admission run confirms an effect. This is also the third round on the same 14 admissions. The inspection behind this change read their generations. The title-echo evidence comes mostly from the 1,044 July generations, but a drop on these 14 could partly be regression to the mean.
 
-Prompt test: pending.
+Prompt test: passed every gate (commit `c6175d2`, 126 generations, no failures). Llama ran with DRY, and the `/slots` check confirmed the settings on every Llama generation. Median generated words:
 
-Decision: pending.
+| Variant | Gemma | Llama | Qwen | Strata outside 250 to 600 |
+| --- | ---: | ---: | ---: | --- |
+| `brief` | 324.5 | 340.5 | 427 | Gemma 4K. Llama 4K, 112K |
+| `unformatted` | 269 | 298 | 334 | Gemma 4K, 16K. Llama 8K, 32K, 96K |
+| `thorough` (no target) | 372.5 | 467 | 489 | Qwen 8K |
+
+Counts against the previous test, totals over the nine model and variant cells: format breaks under `brief` 2 against 1, truncations 1 against 5, title echoes 1 against 18, standalone missing-information lines 1 against 3. No cell rose by more than one. Against July on the same admissions, the totals are 2, 1, 37 and 3.
+
+Expected effects:
+
+- **Title echoes fell from 18 to 1.** Llama went from 14 to 0. Qwen's remaining echo is the 112K domain-organized admission that also used bold headers in the previous test.
+- **Llama truncations fell from 4 to 0.** Llama outputs with any repeated 8-gram fell from 20 to 7.
+- **Inline missing-information phrases did not fall.** Outputs with them fell from 3 to 1, but phrases rose from 7 to 14, all in one Llama `thorough` output. Five of the previous test's 7 came from one Qwen repetition loop. With the phrasing this rare, 14 admissions cannot show the ban's effect either way.
+
+Two findings beyond the gates:
+
+- **Grounded precision recovered.** The share of generated concepts found in the input fell in every cell of the previous test as outputs grew. It rose again in 8 of 9 cells, by up to 0.051 (Llama `brief`, 0.500 to 0.551).
+- **The format instruction changed no metric beyond noise.** On the 7 domain-organized references, `brief` against `unformatted` differed by at most 0.017 on ROUGE-1, ROUGE-L and SapBERT F1. Gemma and Qwen traded ROUGE precision for recall as `brief` outputs ran 56 to 176 words longer. Llama lost on both ROUGE recall and concept recall under `brief`. Against July, `unformatted` rose on concept F1, ROUGE-1 and SapBERT for all three models, while `brief` and `thorough` stayed level.
+
+Decision: keep the tested prompts for the full run. The filler ban stays, against the rule that drops a change whose expected effect does not move. That rule is for text that does nothing. The ban was tested, and the gates show no harm. What is missing is evidence that it helps, because the behavior it targets is too rare to measure on 14 admissions. Its justification also changes: the 24% figure was wrong, so the ban rests on extending the disposition paragraph's rule against noting absent information to any missing information. The full run measures the inline phrasing at 116 admissions.
 
 ### 2026-10-14: length target as an instruction
 
