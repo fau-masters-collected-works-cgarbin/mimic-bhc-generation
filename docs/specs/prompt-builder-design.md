@@ -54,6 +54,8 @@ With about 25 pairs, the checks rule out only shifts larger than about 0.05. A r
 
 **Why Llama only.** Every loop and every check was on Llama. Gemma never truncated. Qwen truncated 0 to 3 times per 116 admissions. For both, DRY would mostly add its costs. The price is a confound: Llama's completion rate and output length come from a different sampler than the other two models', and cross-model statements about either name it. Qwen's rare loops stay and are reported.
 
+**At 116 admissions.** DRY did not reduce Llama's truncations. Llama truncated 21 times over the three variants, as in July (2 against 5 under `unformatted`, 7 against 4 under `brief`, 12 against 12 under `thorough`). Generation with DRY is also less reproducible. Rerun with the same prompts, Llama's concept F1 moved by a standard deviation of 0.017 to 0.024 per admission, where Gemma and Qwen barely moved. Whether to keep DRY is open.
+
 **Verification.** llama-server accepts a misspelled sampler key without error. After every generation, `verify_sampler_applied` reads the slot's parameters back from `/slots` and stops the run if a DRY setting was not applied.
 
 ## Prompt change log
@@ -166,7 +168,7 @@ Counts against the previous test, totals over the nine model and variant cells: 
 Expected effects:
 
 - **Title echoes fell from 18 to 1.** Llama went from 14 to 0. Qwen's remaining echo is the 112K domain-organized admission that also used bold headers in the previous test.
-- **Llama truncations fell from 4 to 0.** Llama outputs with any repeated 8-gram fell from 20 to 7.
+- **Llama truncations fell from 4 to 0.** Llama outputs with any repeated 8-gram fell from 20 to 7. The drop did not hold at 116 admissions (see the full run below).
 - **Inline missing-information phrases did not fall.** Outputs with them fell from 3 to 1, but phrases rose from 7 to 14, all in one Llama `thorough` output. Five of the previous test's 7 came from one Qwen repetition loop. With the phrasing this rare, 14 admissions cannot show the ban's effect either way.
 
 Two findings beyond the gates:
@@ -175,6 +177,22 @@ Two findings beyond the gates:
 - **The format instruction changed no metric beyond noise.** On the 7 domain-organized references, `brief` against `unformatted` differed by at most 0.017 on ROUGE-1, ROUGE-L and SapBERT F1. Gemma and Qwen traded ROUGE precision for recall as `brief` outputs ran 56 to 176 words longer. Llama lost on both ROUGE recall and concept recall under `brief`. Against July, `unformatted` rose on concept F1, ROUGE-1 and SapBERT for all three models, while `brief` and `thorough` stayed level.
 
 Decision: keep the tested prompts for the full run. The filler ban stays, against the rule that drops a change whose expected effect does not move. That rule is for text that does nothing. The ban was tested, and the gates show no harm. What is missing is evidence that it helps, because the behavior it targets is too rare to measure on 14 admissions. Its justification also changes: the 24% figure was wrong, so the ban rests on extending the disposition paragraph's rule against noting absent information to any missing information. The full run measures the inline phrasing at 116 admissions.
+
+Full run: the current prompts ran on all 116 admissions for every variant and model (commit `989d7f5`, 1,044 generations, no failures). `scripts/analysis/run_comparison.py` in `phd-dissertation-data-prep` produces the numbers below. Each comparison pairs a model's untruncated outputs on the admissions both runs scored. Cells read Gemma / Llama / Qwen.
+
+Against July:
+
+| Variant | Concept R | Concept F1 | MEDCON F1 | Grounded P | Median words |
+| --- | --- | --- | --- | --- | --- |
+| `unformatted` | +0.042 / +0.025 / +0.044 | +0.014 / +0.013 / +0.002 | +0.022 / +0.012 / +0.002 | -0.019 / +0.022 / -0.054 | 138 to 270 / 161 to 270 / 183 to 344 |
+| `brief` | +0.025 / +0.018 / +0.024 | +0.008 / +0.013 / -0.006 | +0.006 / +0.016 / -0.007 | -0.011 / +0.004 / -0.041 | 222 to 309 / 232 to 298 / 306 to 434 |
+| `thorough` | -0.003 / +0.011 / +0.008 | -0.001 / +0.009 / +0.002 | -0.005 / +0.012 / -0.003 | +0.024 / -0.013 / +0.007 | 355 to 372 / 302 to 333 / 450 to 505 |
+
+- **`unformatted` gained the most, and less than the prompt test showed.** Recall rose on every metric and model as outputs nearly doubled in length. ROUGE and concept precision fell. SapBERT precision held. Concept F1 rose by 0.002 (Qwen) to 0.014 (Gemma), against paired standard deviations of 0.054 to 0.073. On the 14 prompt test admissions, the pooled gain was 0.017.
+- **Format matching does not raise the concept scores by itself.** Both October variants have the same length target. `brief` against `unformatted` moved concept F1 by -0.002 to +0.006 and MEDCON F1 by -0.008 to +0.005. On the 67 domain-organized references, only Qwen gained (concept F1 +0.016, recall +0.050), and its `brief` outputs ran a median 152 words longer. In July, where `brief` outputs ran 77 to 196 words longer on those references, `brief` gained on Gemma and Qwen. The July format effect went with length.
+- **Llama's domain-organized output is poorly grounded.** On domain-organized references, Llama's grounded precision fell from 0.640 under `unformatted` to 0.412 under `brief` (July 0.632 to 0.438). Gemma and Qwen moved by less than 0.03.
+- **Truncations.** Llama truncated 2, 7 and 12 times under `unformatted`, `brief` and `thorough`, 21 in all, the same total as July (5, 4 and 12). Qwen truncated 2 times, against 4 in July. Gemma never truncated.
+- **Re-run variation.** The 14 prompt test admissions ran again with the same prompts and settings. Qwen's scores were unchanged on every metric. Gemma's changed on a few `brief` and `thorough` admissions, by at most 0.004 in a mean. Llama with DRY changed more: concept F1 moved by a standard deviation of 0.017 to 0.024 per admission. Its means moved by at most 0.006. Llama's re-run variation is a quarter to two fifths of its paired variation against July (0.060 to 0.073).
 
 ### 2026-10-14: length target as an instruction
 
