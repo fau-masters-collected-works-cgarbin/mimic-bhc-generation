@@ -246,9 +246,9 @@ uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/brief-prom
 
 Goal: Establish the long-context quality reference per model and derive each model's working budget from feasibility. Each admission's records are fed in full, in chronological order. Every model is served with a 128K context window.
 
-Run `--prompt brief` across the three models following the [three-model run pattern](#running-across-the-three-models). This is the baseline every other run is compared against.
+Run `--prompt unformatted` across the three models following the [three-model run pattern](#running-across-the-three-models). It is the base prompt.
 
-Then run `--prompt unformatted` and `--prompt thorough` the same way. They change the prompt and hold everything else the same to compare its effect. `unformatted` tests the format instruction and `thorough` tests the brevity instruction.
+Then run `--prompt brief` and `--prompt thorough` the same way. Each changes one instruction of `unformatted` and keeps everything else the same. `brief` adds the format instruction and `thorough` replaces the brevity instruction with a thoroughness instruction. `Prompt selection funnel.md` in the writing vault decides which prompt the later experiments use.
 
 What to check: all admissions complete or fail cleanly with a recorded error. Per-admission token usage and latency are recorded.
 
@@ -497,7 +497,7 @@ flowchart TB
     SCORER --> EVALJSONL["eval_results.jsonl"]
 ```
 
-The prompt builder supports the `unformatted`, `brief`, and `thorough` prompt variants. The `unformatted` variant uses a single template with no format instruction for all admissions. The `brief` and `thorough` variants select a narrative or domain-organized template that matches each admission's ground-truth BHC format. The variant changes formatting at consumption only. The prepared record set is the same either way. See `src/bhc_experiment/prompt_builder.py` for how a template is picked, and the [prompt builder design doc](docs/specs/prompt-builder-design.md) for why the variant and the BHC format are chosen separately.
+The prompt builder supports the `unformatted`, `brief`, and `thorough` prompt variants. The `unformatted` and `thorough` variants each use a single template with no format instruction for all admissions. The `brief` variant selects a narrative or domain-organized template that matches each admission's ground-truth BHC format. The variant changes formatting at consumption only. The prepared record set is the same either way. See `src/bhc_experiment/prompt_builder.py` for how a template is picked, and the [prompt builder design doc](docs/specs/prompt-builder-design.md) for why the variant and the BHC format are chosen separately.
 
 **`prompts/`** has versioned prompt template files (one per prompt variant + BHC format combination).
 

@@ -72,15 +72,10 @@ class TestResolveTemplateName:
         )
         assert resolve_template_name("brief", structure) == "brief_domain"
 
-    def test_thorough_uses_same_mapping(self) -> None:
-        structure = BhcStructure(category="narrative", numbering_convention=None, modifiers=[])
-        assert resolve_template_name("thorough", structure) == "thorough_narrative"
-
-    def test_thorough_domain(self) -> None:
-        structure = BhcStructure(
-            category="domain_organized", numbering_convention="#", modifiers=[]
-        )
-        assert resolve_template_name("thorough", structure) == "thorough_domain"
+    @pytest.mark.parametrize("category", ["narrative", "domain_organized"])
+    def test_thorough_skips_format_routing(self, category: str) -> None:
+        structure = BhcStructure(category=category, numbering_convention=None, modifiers=[])
+        assert resolve_template_name("thorough", structure) == "thorough"
 
 
 def _make_notes() -> list[NoteEvent]:
@@ -289,7 +284,7 @@ def _without(paragraphs: list[str], index: int) -> list[str]:
 
 
 class TestPromptVariantDifferences:
-    """unformatted and thorough each differ from brief in exactly one paragraph,
+    """brief and thorough each differ from unformatted in exactly one paragraph,
     so a score difference between them comes from that instruction alone.
     """
 
@@ -298,8 +293,7 @@ class TestPromptVariantDifferences:
             "unformatted",
             "brief_narrative",
             "brief_domain",
-            "thorough_narrative",
-            "thorough_domain",
+            "thorough",
         }
 
     @pytest.mark.parametrize("fmt", ["narrative", "domain"])
@@ -308,8 +302,9 @@ class TestPromptVariantDifferences:
             _paragraphs(f"brief_{fmt}"), _FORMAT_PARAGRAPH
         )
 
-    @pytest.mark.parametrize("fmt", ["narrative", "domain"])
-    def test_thorough_is_brief_with_thoroughness(self, fmt: str) -> None:
-        assert _without(_paragraphs(f"thorough_{fmt}"), _CONTENT_PARAGRAPH) == _without(
-            _paragraphs(f"brief_{fmt}"), _CONTENT_PARAGRAPH
+    def test_thorough_is_unformatted_with_thoroughness(self) -> None:
+        assert _without(_paragraphs("thorough"), _CONTENT_PARAGRAPH) == _without(
+            _paragraphs("unformatted"), _CONTENT_PARAGRAPH
         )
+        thoroughness = _paragraphs("thorough")[_CONTENT_PARAGRAPH]
+        assert thoroughness != _paragraphs("unformatted")[_CONTENT_PARAGRAPH]

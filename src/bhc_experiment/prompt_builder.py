@@ -23,11 +23,11 @@ def resolve_template_name(variant: str, structure: BhcStructure) -> str:
 
     Returns the template name without extension (e.g., "brief_domain").
 
-    For "unformatted", format conditioning is skipped. Every other variant gets a
-    format suffix from the BHC structure.
+    "unformatted" and "thorough" use one template for every admission. "brief"
+    gets a format suffix from the BHC structure.
     """
-    if variant == "unformatted":
-        return "unformatted"
+    if variant in ("unformatted", "thorough"):
+        return variant
 
     suffix = _resolve_format_suffix(structure)
     return f"{variant}{suffix}"

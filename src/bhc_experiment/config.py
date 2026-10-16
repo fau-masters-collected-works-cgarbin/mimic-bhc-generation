@@ -120,7 +120,8 @@ PROMPT_TEST_COHORT_FILE = "prompt_test_cohort.json"
 # The eligible admissions the cohort is sampled from.
 FILTERED_POOL_FILE = "filtered_pool.json"
 
-# "unformatted" and "thorough" each differ from "brief" in one paragraph.
+# "brief" and "thorough" each differ from "unformatted" in one paragraph: the
+# format instruction and the thoroughness instruction.
 PROMPT_VARIANTS = ("brief", "unformatted", "thorough")
 DEDUPLICATIONS = ("none", "sentence")
 

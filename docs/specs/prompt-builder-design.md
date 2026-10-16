@@ -8,9 +8,9 @@ Template files live in `prompts/`. See `prompts/README.md` for the instruction-o
 
 **The template resolves per admission.** Ground-truth BHCs use different organizational formats. Matching the prompt's structural instruction to the ground truth keeps format mismatch from inflating ROUGE and BERTScore differences when the clinical content is equivalent.
 
-**The variant and the BHC format are chosen separately.** The prompt variant (`unformatted`, `brief`, `thorough`) is the experimental variable and stays fixed for a run. The BHC format is picked per admission. They are independent because they test different things: the variant asks whether format guidance or an explicit thoroughness instruction changes generation, while matching the format controls for format-driven evaluation noise.
+**The variant and the BHC format are chosen separately.** The prompt variant (`unformatted`, `brief`, `thorough`) is the experimental variable and stays fixed for a run. Under `brief`, the BHC format is picked per admission. They are independent because they test different things: the variant asks whether format guidance or an explicit thoroughness instruction changes generation, while matching the format controls for format-driven evaluation noise.
 
-**Each variant differs from `brief` in one paragraph.** `unformatted` is `brief` without the format paragraph, so comparing the two measures the format instruction alone. `thorough` is `brief` with the brevity sentences replaced by a thoroughness instruction, so comparing the two measures what the model is asked to include. Every other paragraph is identical across all five templates, including the coverage and disposition instructions, which earlier differed between the narrative and domain templates. `TestPromptVariantDifferences` in `tests/test_prompt_builder.py` enforces this.
+**Each variant differs from `unformatted` in one paragraph.** `brief` is `unformatted` plus the format paragraph, so comparing the two measures the format instruction alone. `thorough` is `unformatted` with the brevity paragraph replaced by a thoroughness instruction, so comparing the two measures what the model is asked to include. Every other paragraph is identical across all four templates, including the coverage and disposition instructions, which earlier differed between the narrative and domain templates. `TestPromptVariantDifferences` in `tests/test_prompt_builder.py` enforces this.
 
 **The brevity paragraph names a length.** The earlier sentence "Prioritize brevity over completeness of detail" cut Gemma's output under the unformatted prompt to a median 0.33 of the reference length, with 78 of 116 admissions under half. `scripts/analysis/length.py` computes both figures from the archived run `archive/obsolete/case0_minimal/case0_minimal-2026-07-14-dedup-sentence`. The earlier sentence also pulled against the coverage paragraph's "Do not omit documented problems". The paragraph now asks for 250 to 600 words, the rounded interquartile range (242 to 617 words) of the 51,015 successfully extracted BHCs outside the experiment cohort, reported at the top of the same script's output. Leaving out the cohort keeps the scored references out of the prompt. The thoroughness paragraph replaces the length sentence along with the rest of the brevity paragraph.
 
@@ -60,7 +60,7 @@ With about 25 pairs, the checks rule out only shifts larger than about 0.05. A r
 
 ## Prompt change log
 
-Each entry records one change to the prompt wording, its prompt test result, and the decision. Newest first. The commit of each tested change is in the prompt test run records, under `git_commit`.
+Each entry records one change to the prompt wording, its prompt test result, and the decision. Newest first. Each entry's decision covers that wording change. Which prompt the experiments use is decided in `Prompt selection funnel.md` in the writing vault's experiment design folder. The commit of each tested change is in the prompt test run records, under `git_commit`.
 
 ### Version comparison
 
@@ -121,6 +121,21 @@ What the tables show:
 - **v3's own effect is small next to v1 and v2's.** Most of the change from v0 came with the length target. v3 moved F1 by at most 0.012 on any variant and metric, the size of the noise at this sample size.
 
 These are 14 admissions per model. A change of about 0.02 in a mean is within noise for a single model, so the pattern across models and metrics carries more weight than any one cell. Every step bundles several changes, so no single instruction's effect can be read from the tables.
+
+### 2026-10-16: thoroughness without the format instruction
+
+Change, in `thorough`:
+
+- **No format instruction.** `thorough` uses one template for every admission, like `unformatted`. The narrative and domain templates are gone. `thorough` is now `unformatted` with the brevity paragraph replaced by the thoroughness paragraph.
+- **Specificity in the task's terms.** "Name each distinct clinical concept that the records document rather than summarizing at a high level" became "Name specific diagnoses, procedures, and medications rather than summarizing at a high level".
+
+Reason: stage 1 of the prompt selection funnel kept `unformatted`, so stage 2 tests thoroughness against it, one paragraph apart. `unformatted` guides the model toward the usual content and length of a Brief Hospital Course. `thorough` tells it to list the documented details, with no length limit. The old sentence used the concept metric's unit ("distinct clinical concept") as its vocabulary. The new one asks for the same specificity in the words a physician would use.
+
+The October `thorough` run used the format-routed templates. It is archived, so a new run does not resume against it.
+
+Expected effects, against `unformatted` on the same admissions: longer outputs, higher recall and lower precision on every metric.
+
+Prompt test: pending.
 
 ### 2026-10-15: records markers, closing reminder, lab-label guard, filler ban
 
@@ -189,7 +204,7 @@ Against July:
 | `thorough` | -0.003 / +0.011 / +0.008 | -0.001 / +0.009 / +0.002 | -0.005 / +0.012 / -0.003 | +0.024 / -0.013 / +0.007 | 355 to 372 / 302 to 333 / 450 to 505 |
 
 - **`unformatted` gained the most, and less than the prompt test showed.** Recall rose on every metric and model as outputs nearly doubled in length. ROUGE and concept precision fell. SapBERT precision held. Concept F1 rose by 0.002 (Qwen) to 0.014 (Gemma), against paired standard deviations of 0.054 to 0.073. On the 14 prompt test admissions, the pooled gain was 0.017.
-- **Format matching does not raise the concept scores by itself.** Both October variants have the same length target. `brief` against `unformatted` moved concept F1 by -0.002 to +0.006 and MEDCON F1 by -0.008 to +0.005. On the 67 domain-organized references, only Qwen gained (concept F1 +0.016, recall +0.050), and its `brief` outputs ran a median 152 words longer. In July, where `brief` outputs ran 77 to 196 words longer on those references, `brief` gained on Gemma and Qwen. The July format effect went with length.
+- **Format matching does not raise the concept scores by itself.** Both October variants have the same length target. `brief` against `unformatted` moved concept F1 by -0.002 to +0.006 and MEDCON F1 by -0.008 to +0.005. On the 67 domain-organized references, only Qwen gained (concept F1 +0.016, recall +0.050), and its `brief` outputs ran a median 152 words longer. In July, where `brief` outputs ran 77 to 196 words longer on those references, `brief` gained on Gemma and Qwen. The July templates differed in more than format. On narrative references, `unformatted` also asked for chronic conditions on home medications and for follow-up plans, and `brief` did not. On domain-organized references, the two differed only in format and in "woven into the narrative". The July format effect went with length, and on narrative references with that wording too.
 - **Llama's domain-organized output is poorly grounded.** On domain-organized references, Llama's grounded precision fell from 0.640 under `unformatted` to 0.412 under `brief` (July 0.632 to 0.438). Gemma and Qwen moved by less than 0.03.
 - **Truncations.** Llama truncated 2, 7 and 12 times under `unformatted`, `brief` and `thorough`, 21 in all, the same total as July (5, 4 and 12). Qwen truncated 2 times, against 4 in July. Gemma never truncated.
 - **Re-run variation.** The 14 prompt test admissions ran again with the same prompts and settings. Qwen's scores were unchanged on every metric. Gemma's changed on a few `brief` and `thorough` admissions, by at most 0.004 in a mean. Llama with DRY changed more: concept F1 moved by a standard deviation of 0.017 to 0.024 per admission. Its means moved by at most 0.006. Llama's re-run variation is a quarter to two fifths of its paired variation against July (0.060 to 0.073).
