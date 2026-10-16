@@ -133,9 +133,11 @@ Change, in `enumerated`:
 
 Reason: stage 1 of the prompt selection funnel kept `unformatted`, so stage 2 tests thoroughness against it, one paragraph apart. `unformatted` guides the model toward the usual content and length of a Brief Hospital Course. `enumerated` tells it to list the documented details, with no length limit. The old sentence used the concept metric's unit ("distinct clinical concept") as its vocabulary. The new one asks for the same specificity in the words a physician would use.
 
+The paragraph asks for active medications and specific medication names, which the 2026-10-15 change dropped from the guided prompts. That drop removed instructions that rested on how often the reference BHCs mention medications. In `enumerated`, medications are part of listing the documented details, with the problems and diagnoses.
+
 The October `enumerated` run used the format-routed templates. It is archived, so a new run does not resume against it.
 
-Expected effects, against `unformatted` on the same admissions: longer outputs, higher recall and lower precision on every metric.
+Expected effects, against `unformatted` on the same admissions: longer outputs, higher recall and lower precision on every metric. Both prompts keep the coverage paragraph, so both ask for every documented problem. They differ in the detail per problem and in the length budget.
 
 Prompt test: pending.
 
