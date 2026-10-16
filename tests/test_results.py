@@ -68,14 +68,14 @@ class TestModelDirPath:
     """results / <selection> / <prompt>-prompt / <model>"""
 
     def test_layout(self, tmp_path):
-        cli_parameters = CliParameters(model="gemma_4_e4b", prompt="brief")
+        cli_parameters = CliParameters(model="gemma_4_e4b", prompt="format-matched")
         path = model_dir_path(tmp_path, cli_parameters)
-        assert path == tmp_path / "all-records" / "brief-prompt" / "gemma_4_e4b"
+        assert path == tmp_path / "all-records" / "format-matched-prompt" / "gemma_4_e4b"
 
 
 def _create_run(tmp_path: Path, *, total_admissions: int = 5, **overrides) -> Path:
     """Create a run directory and record under tmp_path with test defaults."""
-    cli_parameters = CliParameters(model="gemma_4_e4b", prompt="brief")
+    cli_parameters = CliParameters(model="gemma_4_e4b", prompt="format-matched")
     model_dir = model_dir_path(tmp_path, cli_parameters)
     fields = {
         "cli_parameters": cli_parameters,
@@ -93,7 +93,7 @@ def _create_run(tmp_path: Path, *, total_admissions: int = 5, **overrides) -> Pa
 class TestCreateModelDir:
     def test_run_record_logs_the_models_own_sampler(self, tmp_path):
         """A Llama run that recorded the shared settings would hide that it ran with DRY."""
-        cli_parameters = CliParameters(model="llama_3_2_3b", prompt="brief")
+        cli_parameters = CliParameters(model="llama_3_2_3b", prompt="format-matched")
         model_dir = _create_run(tmp_path, cli_parameters=cli_parameters)
         run_record = yaml.safe_load((model_dir / RUN_RECORD_FILENAME).read_text())
         assert run_record["inference"]["dry_sampler"] == DRY_SAMPLER
@@ -107,7 +107,7 @@ class TestCreateModelDir:
         assert run_record["prepared_commit"] == "b" * 40
         # The model is a CLI parameter, so it appears only in that section.
         assert "model" not in run_record
-        cli_parameters = CliParameters(model="gemma_4_e4b", prompt="brief")
+        cli_parameters = CliParameters(model="gemma_4_e4b", prompt="format-matched")
         assert CliParameters(**run_record["cli_parameters"]) == cli_parameters
         assert run_record["inference"] == asdict(inference_for("gemma_4_e4b"))
         assert run_record["total_admissions"] == 200

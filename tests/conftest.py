@@ -104,7 +104,7 @@ def make_bundle(
     )
 
 
-def make_meta(model_key: str = "gemma_4_e4b", prompt: str = "brief") -> dict:
+def make_meta(model_key: str = "gemma_4_e4b", prompt: str = "format-matched") -> dict:
     """A completed run record for one model and prompt variant."""
     return {
         "cli_parameters": dataclasses.asdict(CliParameters(model=model_key, prompt=prompt)),

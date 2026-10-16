@@ -21,12 +21,12 @@ from bhc_experiment.loader import (
 def resolve_template_name(variant: str, structure: BhcStructure) -> str:
     """Map a prompt variant + BhcStructure to a template name.
 
-    Returns the template name without extension (e.g., "brief_domain").
+    Returns the template name without extension (e.g., "format-matched_domain").
 
-    "unformatted" and "thorough" use one template for every admission. "brief"
-    gets a format suffix from the BHC structure.
+    "unformatted" and "enumerated" use one template for every admission.
+    "format-matched" gets a format suffix from the BHC structure.
     """
-    if variant in ("unformatted", "thorough"):
+    if variant in ("unformatted", "enumerated"):
         return variant
 
     suffix = _resolve_format_suffix(structure)

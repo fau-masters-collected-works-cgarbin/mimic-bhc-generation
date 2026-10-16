@@ -9,13 +9,13 @@ Questions answered:
 
 Usage:
     RESULTS=../phd-dissertation-experiment-results/results
-    # Mean scores per model for the brief prompt over all records
-    uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/brief-prompt
+    # Mean scores per model for the format-matched prompt over all records
+    uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/format-matched-prompt
     # Per-admission breakdown instead of per-model means
-    uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/brief-prompt \
+    uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/format-matched-prompt \
         --per-admission
     # Output as markdown table (default is ascii)
-    uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/brief-prompt \
+    uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/format-matched-prompt \
         --format markdown
 """
 

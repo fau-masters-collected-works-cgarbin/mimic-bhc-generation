@@ -33,11 +33,11 @@ class TestExportSummary:
 
     def _setup(self, tmp_path: Path, admission_dict, monkeypatch) -> None:
         """Build one run with two models and two admissions under a synthetic
-        results root, at ``tmp_path/results/all-records/brief-prompt``.
+        results root, at ``tmp_path/results/all-records/format-matched-prompt``.
         """
         results_root = tmp_path / "results"
         monkeypatch.setattr(results_reader, "COHORTS_DIR", tmp_path)
-        cohort_path = tmp_path / CliParameters(prompt="brief").cohort_file
+        cohort_path = tmp_path / CliParameters(prompt="format-matched").cohort_file
         cohort_path.write_text(
             json.dumps(
                 {
@@ -49,7 +49,7 @@ class TestExportSummary:
                 }
             )
         )
-        run_dir = results_root / "all-records" / "brief-prompt"
+        run_dir = results_root / "all-records" / "format-matched-prompt"
         scores = {100: {"sapbert/f1": 0.8}, 200: {"sapbert/f1": 0.7}}
         evals = [{"hadm_id": h, "scores": s, "coverage": None} for h, s in scores.items()]
         for model_key in ("gemma_4_e4b", "llama_3_2_3b"):
@@ -63,14 +63,14 @@ class TestExportSummary:
 
         out_path = tmp_path / "out.md"
         args = argparse.Namespace(
-            run_dir=tmp_path / "results" / "all-records" / "brief-prompt",
+            run_dir=tmp_path / "results" / "all-records" / "format-matched-prompt",
             stratify_by=None,
             output=str(out_path),
         )
         export_eda.export_summary(args)
 
         content = out_path.read_text()
-        assert "# Summary: all-records/brief-prompt" in content
+        assert "# Summary: all-records/format-matched-prompt" in content
         assert "- Series: 2" in content
         assert "- Admissions in the run: 2" in content
         assert "| series_label | n | sapbert/f1 |" in content

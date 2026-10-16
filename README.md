@@ -218,7 +218,7 @@ A change to the prompt wording runs on the prompt test cohort before the full ex
 | Flag | Values | Default |
 | --- | --- | --- |
 | `--model` | `gemma_4_e4b`, `qwen_3_5_4b`, `llama_3_2_3b` | required |
-| `--prompt` | `brief`, `unformatted`, `thorough` | required |
+| `--prompt` | `format-matched`, `unformatted`, `enumerated` | required |
 | `--dedup` | `sentence`, `none` | `sentence` |
 | `--oracle-n` | the oracle's neighbor radius, 0 or more | all records |
 | `--smoke` | the smoke cohort | the experiment cohort |
@@ -229,7 +229,7 @@ Results are stored in the experiment data repo (`phd-dissertation-experiment-res
 llama-server hosts one model at a time. `run_all_models.sh` launches each model in turn and passes its flags to `run_experiment.py`:
 
 ```bash
-scripts/pipeline/run_all_models.sh --prompt brief
+scripts/pipeline/run_all_models.sh --prompt format-matched
 ```
 
 To run a single model, call `run_experiment.py` directly with `--model`, as in the smoke test.
@@ -238,8 +238,8 @@ Scoring and summarization take the run directory and cover all three models. The
 
 ```bash
 RESULTS=../phd-dissertation-experiment-results/results
-uv run python scripts/pipeline/score_results.py $RESULTS/all-records/brief-prompt
-uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/brief-prompt
+uv run python scripts/pipeline/score_results.py $RESULTS/all-records/format-matched-prompt
+uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/format-matched-prompt
 ```
 
 #### All records
@@ -248,7 +248,7 @@ Goal: Establish the long-context quality reference per model and derive each mod
 
 Run `--prompt unformatted` across the three models following the [three-model run pattern](#running-across-the-three-models). It is the base prompt.
 
-Then run `--prompt brief` and `--prompt thorough` the same way. Each changes one instruction of `unformatted` and keeps everything else the same. `brief` adds the format instruction and `thorough` replaces the brevity instruction with a thoroughness instruction. `Prompt selection funnel.md` in the writing vault decides which prompt the later experiments use.
+Then run `--prompt format-matched` and `--prompt enumerated` the same way. Each changes one instruction of `unformatted` and keeps everything else the same. `format-matched` adds the format instruction and `enumerated` replaces the brevity instruction with a thoroughness instruction. `Prompt selection funnel.md` in the writing vault decides which prompt the later experiments use.
 
 What to check: all admissions complete or fail cleanly with a recorded error. Per-admission token usage and latency are recorded.
 
@@ -257,8 +257,8 @@ What to check: all admissions complete or fail cleanly with a recorded error. Pe
 Measure whether removing duplicate note text changes quality and cost. Prepare both sets in step 2, then run and score the three models under each. The `--dedup none` run lands in `all-records-no-dedup`. Both runs cover the same admissions, so compare them per admission, paired on `hadm_id`:
 
 ```bash
-uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/brief-prompt --per-admission
-uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records-no-dedup/brief-prompt --per-admission
+uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/format-matched-prompt --per-admission
+uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records-no-dedup/format-matched-prompt --per-admission
 ```
 
 Sentence dedup removes no concept by construction, so the difference is the generation effect. See the [deduplication design](docs/specs/note-dedup-design.md) for the methods and why whole-note is not in the recipe.
@@ -272,11 +272,11 @@ An oracle retriever is a hypothetical retriever that sees the reference BHC and 
 Only long-stratum (32K tokens or more) admissions with at least one anchor are run. Short admissions already use less memory and are completed in seconds, so there is no benefit in applying retrieval to them.
 
 ```bash
-scripts/pipeline/run_all_models.sh --prompt brief --oracle-n 0
-uv run python scripts/pipeline/score_results.py $RESULTS/oracle-n-0/brief-prompt
+scripts/pipeline/run_all_models.sh --prompt format-matched --oracle-n 0
+uv run python scripts/pipeline/score_results.py $RESULTS/oracle-n-0/format-matched-prompt
 
-scripts/pipeline/run_all_models.sh --prompt brief --oracle-n 2
-uv run python scripts/pipeline/score_results.py $RESULTS/oracle-n-2/brief-prompt
+scripts/pipeline/run_all_models.sh --prompt format-matched --oracle-n 2
+uv run python scripts/pipeline/score_results.py $RESULTS/oracle-n-2/format-matched-prompt
 ```
 
 Scoring measures the input-coverage ceiling over the selected records, the input the oracle model saw.
@@ -284,8 +284,8 @@ Scoring measures the input-coverage ceiling over the selected records, the input
 Each oracle run covers only the long strata, so compare it with the all-records run per admission, not by run means. List both runs per admission and pair the rows on `hadm_id`:
 
 ```bash
-uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/brief-prompt --per-admission
-uv run python scripts/pipeline/summarize_runs.py $RESULTS/oracle-n-0/brief-prompt --per-admission
+uv run python scripts/pipeline/summarize_runs.py $RESULTS/all-records/format-matched-prompt --per-admission
+uv run python scripts/pipeline/summarize_runs.py $RESULTS/oracle-n-0/format-matched-prompt --per-admission
 ```
 
 The retrieval-ceiling gate reads the paired difference in concept recall. Compare depth (`oracle-n-2`) with breadth (`oracle-n-0`) the same way.
@@ -295,7 +295,7 @@ The retrieval-ceiling gate reads the paired difference in concept recall. Compar
 Scoring runs after generation, as its own pass, and always runs the metrics in `config.METRICS`: ROUGE, BERTScore, the scispaCy concept metric, and reference MEDCON. It reads the step-2 prepared-input artifact. The input-coverage ceiling also reads the concept artifact. Each pass replaces the model directory's `eval_results.jsonl`, one line per admission, and records what scored it in `eval_record.yaml`.
 
 ```bash
-uv run python scripts/pipeline/score_results.py $RESULTS/all-records/brief-prompt
+uv run python scripts/pipeline/score_results.py $RESULTS/all-records/format-matched-prompt
 ```
 
 Scoring refuses two kinds of run: one whose inputs were prepared again after it was generated, and one whose stored prompts differ from the prompts the current code builds. In both cases the ceiling would describe records the model did not see. It warns on a run that did not complete.
@@ -308,11 +308,11 @@ Reference MEDCON is Yim et al.'s scorer, unmodified, over its own QuickUMLS matc
 
 These reports read a scored run. See [Deriving everything else](#deriving-everything-else) for the rest of the results chapter.
 
-`RUN` names the primary run under inspection, the all-records baseline with the brief prompt.
+`RUN` names the primary run under inspection, the all-records baseline with the format-matched prompt.
 
 ```bash
 RESULTS=../phd-dissertation-experiment-results/results
-RUN=$RESULTS/all-records/brief-prompt
+RUN=$RESULTS/all-records/format-matched-prompt
 ```
 
 ##### Generation results
@@ -497,7 +497,7 @@ flowchart TB
     SCORER --> EVALJSONL["eval_results.jsonl"]
 ```
 
-The prompt builder supports the `unformatted`, `brief`, and `thorough` prompt variants. The `unformatted` and `thorough` variants each use a single template with no format instruction for all admissions. The `brief` variant selects a narrative or domain-organized template that matches each admission's ground-truth BHC format. The variant changes formatting at consumption only. The prepared record set is the same either way. See `src/bhc_experiment/prompt_builder.py` for how a template is picked, and the [prompt builder design doc](docs/specs/prompt-builder-design.md) for why the variant and the BHC format are chosen separately.
+The prompt builder supports the `unformatted`, `format-matched`, and `enumerated` prompt variants. The `unformatted` and `enumerated` variants each use a single template with no format instruction for all admissions. The `format-matched` variant selects a narrative or domain-organized template that matches each admission's ground-truth BHC format. The variant changes formatting at consumption only. The prepared record set is the same either way. See `src/bhc_experiment/prompt_builder.py` for how a template is picked, and the [prompt builder design doc](docs/specs/prompt-builder-design.md) for why the variant and the BHC format are chosen separately.
 
 **`prompts/`** has versioned prompt template files (one per prompt variant + BHC format combination).
 

@@ -10,10 +10,10 @@
 # Every argument is passed to run_experiment.py for each model.
 #
 # Usage:
-#   scripts/pipeline/run_all_models.sh --prompt brief
-#   scripts/pipeline/run_all_models.sh --prompt brief --oracle-n 2
+#   scripts/pipeline/run_all_models.sh --prompt format-matched
+#   scripts/pipeline/run_all_models.sh --prompt format-matched --oracle-n 2
 #   scripts/pipeline/run_all_models.sh --prompt unformatted --smoke
-#   scripts/pipeline/run_all_models.sh --prompt brief --prompt-test
+#   scripts/pipeline/run_all_models.sh --prompt format-matched --prompt-test
 
 set -euo pipefail
 

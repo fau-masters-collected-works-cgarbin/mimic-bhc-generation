@@ -2,8 +2,8 @@
 
 Usage:
     RESULTS=../phd-dissertation-experiment-results/results
-    uv run python scripts/pipeline/score_results.py $RESULTS/all-records/brief-prompt
-    uv run python scripts/pipeline/score_results.py $RESULTS/oracle-n-2/brief-prompt
+    uv run python scripts/pipeline/score_results.py $RESULTS/all-records/format-matched-prompt
+    uv run python scripts/pipeline/score_results.py $RESULTS/oracle-n-2/format-matched-prompt
 
 Scores each model directory under the run, replacing earlier scores. The run's
 recorded CLI parameters name the inputs. The input-coverage ceiling is measured

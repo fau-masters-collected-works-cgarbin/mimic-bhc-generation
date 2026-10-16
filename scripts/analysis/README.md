@@ -2,7 +2,7 @@
 
 Each script reads one experiment run folder, computes one aspect of it, and writes its report and figures back into that folder.
 
-A run folder is a directory like `.../results/all-records/brief-prompt`. It has one subdirectory per model, each with that model's run record and per-admission results.
+A run folder is a directory like `.../results/all-records/format-matched-prompt`. It has one subdirectory per model, each with that model's run record and per-admission results.
 
 ## How to run
 

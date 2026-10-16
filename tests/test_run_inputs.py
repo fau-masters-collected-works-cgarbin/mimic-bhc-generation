@@ -85,7 +85,9 @@ class TestRunInputs:
             lambda _dir, _cohort, _dedup: _FakePreparedStore({200: "b200"}),
         )
 
-        hadm_ids, load_bundle = run_inputs.run_inputs(CliParameters(prompt="brief", oracle_n=0))
+        hadm_ids, load_bundle = run_inputs.run_inputs(
+            CliParameters(prompt="format-matched", oracle_n=0)
+        )
 
         assert hadm_ids == [200]
         assert load_bundle(200) == ("b200", {("note", 1)})
@@ -93,14 +95,14 @@ class TestRunInputs:
 
 class TestDescribeInputs:
     def test_full_input_names_the_cohort_and_prepared_records(self):
-        assert run_inputs.describe_inputs(CliParameters(prompt="brief")) == {
+        assert run_inputs.describe_inputs(CliParameters(prompt="format-matched")) == {
             "cohort_file": EXPERIMENT_COHORT_FILE,
             "prepared_file": f"{prepared_stem(EXPERIMENT_COHORT_FILE, 'sentence')}.jsonl",
         }
 
     def test_oracle_adds_the_strata_and_the_record_concepts_it_selected_from(self):
         inputs = run_inputs.describe_inputs(
-            CliParameters(prompt="brief", oracle_n=2, deduplication="none")
+            CliParameters(prompt="format-matched", oracle_n=2, deduplication="none")
         )
         expected_path = record_concepts_path(
             PREPARED_DIR, EXPERIMENT_COHORT_FILE, "none", concept_params(MAIN_CONCEPT_SPACE)
@@ -128,7 +130,7 @@ class TestMismatchedPrompts:
         error: str | None = None,
         system: str | None = None,
     ) -> None:
-        prompt = build_prompt(bundle, "brief")
+        prompt = build_prompt(bundle, "format-matched")
         append_result(
             model_dir,
             ResultRecord(
@@ -149,7 +151,7 @@ class TestMismatchedPrompts:
             200: _bundle(200, "Another note."),
         }
 
-        assert run_inputs.mismatched_prompts(tmp_path, bundles, "brief") == [
+        assert run_inputs.mismatched_prompts(tmp_path, bundles, "format-matched") == [
             200,
             300,
         ]
@@ -162,7 +164,7 @@ class TestMismatchedPrompts:
         )
         bundles = {100: _bundle(100, "Synthetic note.")}
 
-        assert run_inputs.mismatched_prompts(tmp_path, bundles, "brief") == [100]
+        assert run_inputs.mismatched_prompts(tmp_path, bundles, "format-matched") == [100]
 
     def test_skips_an_admission_that_failed_before_its_prompt(self, tmp_path):
         self._generate(
@@ -172,4 +174,4 @@ class TestMismatchedPrompts:
         )
         bundles = {100: _bundle(100, "Another note.")}
 
-        assert run_inputs.mismatched_prompts(tmp_path, bundles, "brief") == []
+        assert run_inputs.mismatched_prompts(tmp_path, bundles, "format-matched") == []

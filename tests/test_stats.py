@@ -26,10 +26,10 @@ def _paired_df(
 ) -> pd.DataFrame:
     """Build synthetic paired data with a known per-group variant effect.
 
-    Each admission contributes one (minimal, structured) pair per group. Minimal
-    scores are drawn around a per-admission baseline. Structured scores add
-    ``delta`` (or the group-specific delta when ``groups`` is given) plus small
-    noise. The per-admission baseline simulates admission-level difficulty.
+    Each admission contributes one (unformatted, format-matched) pair per group.
+    Unformatted scores are drawn around a per-admission baseline. Format-matched
+    scores add ``delta`` (or the group-specific delta when ``groups`` is given)
+    plus small noise. The per-admission baseline simulates admission-level difficulty.
     """
     rng = np.random.default_rng(seed)
     baselines = rng.normal(0.75, 0.05, size=n_admissions)
@@ -48,7 +48,7 @@ def _paired_df(
             rows.append(
                 {
                     "hadm_id": i,
-                    "variant": "brief",
+                    "variant": "format-matched",
                     "model": group,
                     "score": base + group_delta + rng.normal(0, 0.01),
                 }
@@ -64,7 +64,7 @@ class TestPairedBootstrapCi:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
         )
         assert len(out) == 1
 
@@ -75,7 +75,7 @@ class TestPairedBootstrapCi:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
             group_col="model",
         )
         assert len(out) == 2
@@ -88,10 +88,10 @@ class TestPairedBootstrapCi:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
         )
         pivot = df.pivot(index="hadm_id", columns="variant", values="score")
-        expected = (pivot["brief"] - pivot["unformatted"]).mean()
+        expected = (pivot["format-matched"] - pivot["unformatted"]).mean()
         assert out.iloc[0]["delta"] == pytest.approx(expected)
 
     def test_ci_brackets_point_estimate(self):
@@ -101,7 +101,7 @@ class TestPairedBootstrapCi:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
         )
         row = out.iloc[0]
         assert row["ci_lower"] <= row["delta"] <= row["ci_upper"]
@@ -113,7 +113,7 @@ class TestPairedBootstrapCi:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
         )
         row = out.iloc[0]
         assert abs(row["delta"]) < 0.005
@@ -126,7 +126,7 @@ class TestPairedBootstrapCi:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
             seed=123,
         )
         out_b = paired_bootstrap_ci(
@@ -134,7 +134,7 @@ class TestPairedBootstrapCi:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
             seed=123,
         )
         assert out_a.iloc[0]["ci_lower"] == out_b.iloc[0]["ci_lower"]
@@ -147,7 +147,7 @@ class TestPairedBootstrapCi:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
             seed=123,
         )
         out_b = paired_bootstrap_ci(
@@ -155,7 +155,7 @@ class TestPairedBootstrapCi:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
             seed=456,
         )
         assert out_a.iloc[0]["ci_lower"] != out_b.iloc[0]["ci_lower"]
@@ -170,7 +170,7 @@ class TestPairedBootstrapCi:
             "metric": "score",
             "contrast_col": "variant",
             "contrast_a": "unformatted",
-            "contrast_b": "brief",
+            "contrast_b": "format-matched",
             "seed": 123,
         }
         both = paired_bootstrap_ci(df, group_col="model", **common)
@@ -190,19 +190,19 @@ class TestPairedBootstrapCi:
                 metric="score",
                 contrast_col="variant",
                 contrast_a="unformatted",
-                contrast_b="brief",
+                contrast_b="format-matched",
             )
 
     def test_unpaired_admission_raises(self):
         df = _paired_df(20, delta=0.02, seed=11)
-        df = df[~((df["hadm_id"] == 3) & (df["variant"] == "brief"))]
+        df = df[~((df["hadm_id"] == 3) & (df["variant"] == "format-matched"))]
         with pytest.raises(ValueError, match="missing from contrast"):
             paired_bootstrap_ci(
                 df,
                 metric="score",
                 contrast_col="variant",
                 contrast_a="unformatted",
-                contrast_b="brief",
+                contrast_b="format-matched",
             )
 
     def test_empty_df_returns_empty(self):
@@ -212,7 +212,7 @@ class TestPairedBootstrapCi:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
         )
         assert out.empty
         assert list(out.columns) == ["mean_a", "mean_b", "delta", "ci_lower", "ci_upper", "n_pairs"]
@@ -225,14 +225,14 @@ class TestPairedBootstrapCi:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
         )
         out_large = paired_bootstrap_ci(
             large,
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
         )
         width_small = out_small.iloc[0]["ci_upper"] - out_small.iloc[0]["ci_lower"]
         width_large = out_large.iloc[0]["ci_upper"] - out_large.iloc[0]["ci_lower"]
@@ -257,7 +257,7 @@ class TestPairedBootstrapCiAdditional:
             metric="score",
             contrast_col="variant",
             contrast_a="unformatted",
-            contrast_b="brief",
+            contrast_b="format-matched",
             pair_col=["hadm_id", "model"],
         )
         assert len(out) == 1

@@ -15,36 +15,36 @@ class TestRequireFullInput:
     """Scripts that measure the ceiling over every record refuse an oracle run."""
 
     def _run(self, tmp_path, cli_parameters: CliParameters):
-        run_dir = tmp_path / "brief-prompt"
+        run_dir = tmp_path / "format-matched-prompt"
         write_model_dir(run_dir, "gemma_4_e4b", {"cli_parameters": asdict(cli_parameters)})
         return run_dir
 
     def test_oracle_run_raises(self, tmp_path):
         run_dir = self._run(
-            tmp_path, CliParameters(model="gemma_4_e4b", prompt="brief", oracle_n=0)
+            tmp_path, CliParameters(model="gemma_4_e4b", prompt="format-matched", oracle_n=0)
         )
         with pytest.raises(ValueError, match="is an oracle run"):
             require_full_input(run_dir)
 
     def test_all_records_run_passes(self, tmp_path):
-        run_dir = self._run(tmp_path, CliParameters(model="gemma_4_e4b", prompt="brief"))
+        run_dir = self._run(tmp_path, CliParameters(model="gemma_4_e4b", prompt="format-matched"))
         require_full_input(run_dir)
 
 
 class TestRequireOracleSelection:
     def _run(self, tmp_path, cli_parameters: CliParameters):
-        run_dir = tmp_path / "brief-prompt"
+        run_dir = tmp_path / "format-matched-prompt"
         write_model_dir(run_dir, "gemma_4_e4b", {"cli_parameters": asdict(cli_parameters)})
         return run_dir
 
     def test_all_records_run_raises(self, tmp_path):
-        run_dir = self._run(tmp_path, CliParameters(model="gemma_4_e4b", prompt="brief"))
+        run_dir = self._run(tmp_path, CliParameters(model="gemma_4_e4b", prompt="format-matched"))
         with pytest.raises(ValueError, match="is not an oracle run"):
             require_oracle_selection(run_dir)
 
     def test_oracle_run_passes(self, tmp_path):
         run_dir = self._run(
-            tmp_path, CliParameters(model="gemma_4_e4b", prompt="brief", oracle_n=0)
+            tmp_path, CliParameters(model="gemma_4_e4b", prompt="format-matched", oracle_n=0)
         )
         require_oracle_selection(run_dir)
 

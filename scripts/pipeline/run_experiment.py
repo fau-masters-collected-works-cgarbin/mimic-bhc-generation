@@ -1,8 +1,8 @@
 """Generate BHCs for one model under one set of CLI parameters.
 
 Usage:
-    uv run python scripts/pipeline/run_experiment.py --model gemma_4_e4b --prompt brief
-    uv run python scripts/pipeline/run_experiment.py --model gemma_4_e4b --prompt brief \
+    uv run python scripts/pipeline/run_experiment.py --model gemma_4_e4b --prompt format-matched
+    uv run python scripts/pipeline/run_experiment.py --model gemma_4_e4b --prompt format-matched \
         --oracle-n 2
 
 Results go to results/<selection>/<prompt>-prompt/<model>/. One server hosts one

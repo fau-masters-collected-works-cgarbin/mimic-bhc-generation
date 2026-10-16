@@ -7,7 +7,7 @@
 ```
 results/
   all-records/                           # input selection: all-records, oracle-n-<N>, smoke, prompt-test, plus -no-dedup
-    brief-prompt/                   # prompt variant
+    format-matched-prompt/                   # prompt variant
       outlier_review_notes.json          # optional, run-level
       gemma_4_e4b/                       # model registry key
         run_record.yaml                  # provenance, settings, and status

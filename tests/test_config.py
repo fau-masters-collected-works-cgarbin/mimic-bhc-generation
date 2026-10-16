@@ -18,24 +18,25 @@ class TestCliParameters:
 
     def test_prompt_test_runs_on_the_prompt_test_cohort(self) -> None:
         assert (
-            CliParameters(prompt="brief", prompt_test=True).cohort_file == PROMPT_TEST_COHORT_FILE
+            CliParameters(prompt="format-matched", prompt_test=True).cohort_file
+            == PROMPT_TEST_COHORT_FILE
         )
 
     @pytest.mark.parametrize(
         ("cli_parameters", "name"),
         [
-            (CliParameters(prompt="brief"), "all-records"),
-            (CliParameters(prompt="brief", deduplication="none"), "all-records-no-dedup"),
-            (CliParameters(prompt="brief", oracle_n=0), "oracle-n-0"),
-            (CliParameters(prompt="brief", oracle_n=2), "oracle-n-2"),
+            (CliParameters(prompt="format-matched"), "all-records"),
+            (CliParameters(prompt="format-matched", deduplication="none"), "all-records-no-dedup"),
+            (CliParameters(prompt="format-matched", oracle_n=0), "oracle-n-0"),
+            (CliParameters(prompt="format-matched", oracle_n=2), "oracle-n-2"),
             (
-                CliParameters(prompt="brief", oracle_n=2, deduplication="none"),
+                CliParameters(prompt="format-matched", oracle_n=2, deduplication="none"),
                 "oracle-n-2-no-dedup",
             ),
             (CliParameters(prompt="unformatted", smoke=True), "smoke"),
-            (CliParameters(prompt="brief", prompt_test=True), "prompt-test"),
+            (CliParameters(prompt="format-matched", prompt_test=True), "prompt-test"),
             (
-                CliParameters(prompt="brief", prompt_test=True, deduplication="none"),
+                CliParameters(prompt="format-matched", prompt_test=True, deduplication="none"),
                 "prompt-test-no-dedup",
             ),
         ],
@@ -54,11 +55,11 @@ class TestCliParameters:
     def test_more_than_one_selection_raises(self, selections: dict) -> None:
         # The directory names one selection, so a second would be mislabeled.
         with pytest.raises(ValueError, match="at most one"):
-            CliParameters(prompt="brief", **selections)
+            CliParameters(prompt="format-matched", **selections)
 
     def test_run_name_is_the_selection_and_prompt(self) -> None:
-        cli_parameters = CliParameters(prompt="thorough", oracle_n=2)
-        assert cli_parameters.run_name == "oracle-n-2/thorough-prompt"
+        cli_parameters = CliParameters(prompt="enumerated", oracle_n=2)
+        assert cli_parameters.run_name == "oracle-n-2/enumerated-prompt"
 
 
 class TestInferenceFor:

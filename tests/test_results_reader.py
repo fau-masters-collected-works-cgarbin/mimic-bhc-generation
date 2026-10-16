@@ -36,7 +36,7 @@ from bhc_experiment.results_reader import (
 
 from .conftest import make_bundle, make_meta, write_model_dir
 
-RUN_DIR = Path("all-records") / "brief-prompt"
+RUN_DIR = Path("all-records") / "format-matched-prompt"
 
 
 def _make_result(hadm_id: int, *, error: str | None = None, truncated: bool = False) -> dict:
@@ -95,7 +95,7 @@ class TestDiscoverModelDirs:
 
     def test_prefix_filter(self, tmp_path):
         write_model_dir(tmp_path / RUN_DIR, "gemma_4_e4b", make_meta())
-        write_model_dir(tmp_path / "smoke" / "brief-prompt", "qwen_3_5_4b", make_meta())
+        write_model_dir(tmp_path / "smoke" / "format-matched-prompt", "qwen_3_5_4b", make_meta())
 
         model_dirs = discover_model_dirs(tmp_path, prefix="gemma")
         assert len(model_dirs) == 1
@@ -153,8 +153,8 @@ class TestRunCliParameters:
     @pytest.mark.parametrize(
         "cli_parameters",
         [
-            CliParameters(model="gemma_4_e4b", prompt="brief", oracle_n=2),
-            CliParameters(model="gemma_4_e4b", prompt="thorough", deduplication="none"),
+            CliParameters(model="gemma_4_e4b", prompt="format-matched", oracle_n=2),
+            CliParameters(model="gemma_4_e4b", prompt="enumerated", deduplication="none"),
             CliParameters(model="qwen_3_5_4b", prompt="unformatted", smoke=True),
         ],
     )
@@ -166,7 +166,7 @@ class TestRunCliParameters:
 class TestExtractRunLabel:
     def test_extract(self):
         assert extract_run_label(make_meta("qwen_3_5_4b")) == (
-            "all-records/brief-prompt",
+            "all-records/format-matched-prompt",
             "qwen_3_5_4b",
         )
 
@@ -249,7 +249,7 @@ class TestBuildSummaryDf:
 
         df = build_summary_df([(meta, records)])
         assert len(df) == 1
-        assert df.iloc[0]["run"] == "all-records/brief-prompt"
+        assert df.iloc[0]["run"] == "all-records/format-matched-prompt"
         assert df.iloc[0]["model"] == "llama_3_2_3b"
         assert df.iloc[0]["n_admissions"] == 2
         assert df.iloc[0]["n_errors"] == 0
@@ -299,7 +299,7 @@ class TestBuildPerAdmissionDf:
         df = build_per_admission_df([(meta, records)])
         assert len(df) == 2
         assert list(df["hadm_id"]) == [100, 200]
-        assert df.iloc[0]["run"] == "all-records/brief-prompt"
+        assert df.iloc[0]["run"] == "all-records/format-matched-prompt"
         assert df.iloc[0]["model"] == "llama_3_2_3b"
 
     def test_error_record_included(self):
@@ -407,7 +407,7 @@ class TestLoadRun:
         loaded = load_run(tmp_path / RUN_DIR)
         assert len(loaded) == 3
         for meta_loaded, scored in loaded:
-            assert meta_loaded["cli_parameters"]["prompt"] == "brief"
+            assert meta_loaded["cli_parameters"]["prompt"] == "format-matched"
             assert len(scored) == 2
 
     def test_skips_models_without_run_record(self, tmp_path):
@@ -603,7 +603,9 @@ class TestRunPreparedStore:
             git_dirty=False,
         )
         monkeypatch.setattr(results_reader, "PREPARED_DIR", prepared_dir)
-        cli_parameters = CliParameters(model="gemma_4_e4b", prompt="brief", deduplication="none")
+        cli_parameters = CliParameters(
+            model="gemma_4_e4b", prompt="format-matched", deduplication="none"
+        )
         write_model_dir(tmp_path / RUN_DIR, "gemma_4_e4b", _meta_for(cli_parameters))
 
         store = run_prepared_store(tmp_path / RUN_DIR)

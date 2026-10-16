@@ -23,14 +23,14 @@ class TestScorableModelDirs:
     """_scorable_model_dirs returns the model directories under a run directory."""
 
     def test_returns_scorable_model_dirs_sorted(self, tmp_path):
-        run_dir = tmp_path / "all-records" / "brief-prompt"
+        run_dir = tmp_path / "all-records" / "format-matched-prompt"
         dir_b = write_model_dir(run_dir, "qwen_3_5_4b", RUN_RECORD, [{"hadm_id": 1}])
         dir_a = write_model_dir(run_dir, "gemma_4_e4b", RUN_RECORD, [{"hadm_id": 1}])
 
         assert _scorable_model_dirs(run_dir) == [dir_a, dir_b]
 
     def test_skips_dir_with_record_but_no_results(self, tmp_path):
-        run_dir = tmp_path / "all-records" / "brief-prompt"
+        run_dir = tmp_path / "all-records" / "format-matched-prompt"
         write_model_dir(run_dir, "gemma_4_e4b", RUN_RECORD)
 
         assert _scorable_model_dirs(run_dir) == []

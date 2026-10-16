@@ -119,7 +119,7 @@ class TestAttachCohort:
         """Same admission across two runs produces two rows, both with cohort attrs."""
         runs = [
             (make_meta(prompt="unformatted"), [_make_scored(100, 0.7)]),
-            (make_meta(prompt="brief"), [_make_scored(100, 0.8)]),
+            (make_meta(prompt="format-matched"), [_make_scored(100, 0.8)]),
         ]
         results_df = build_per_admission_df(runs)
 
@@ -133,5 +133,5 @@ class TestAttachCohort:
         assert (merged["bhc_category"] == "narrative").all()
         assert set(merged["run"]) == {
             "all-records/unformatted-prompt",
-            "all-records/brief-prompt",
+            "all-records/format-matched-prompt",
         }

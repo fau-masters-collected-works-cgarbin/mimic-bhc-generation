@@ -120,9 +120,9 @@ PROMPT_TEST_COHORT_FILE = "prompt_test_cohort.json"
 # The eligible admissions the cohort is sampled from.
 FILTERED_POOL_FILE = "filtered_pool.json"
 
-# "brief" and "thorough" each differ from "unformatted" in one paragraph: the
-# format instruction and the thoroughness instruction.
-PROMPT_VARIANTS = ("brief", "unformatted", "thorough")
+# "format-matched" and "enumerated" each differ from "unformatted" in one
+# paragraph: the format instruction and the thoroughness instruction.
+PROMPT_VARIANTS = ("format-matched", "unformatted", "enumerated")
 DEDUPLICATIONS = ("none", "sentence")
 
 INFERENCE = InferenceConfig(temperature=0.0, max_completion_tokens=4096, frequency_penalty=0.5)

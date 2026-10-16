@@ -32,50 +32,52 @@ class TestResolveTemplateName:
         )
         assert resolve_template_name("unformatted", structure) == "unformatted"
 
-    def test_brief_narrative(self) -> None:
+    def test_format_matched_narrative(self) -> None:
         structure = BhcStructure(category="narrative", numbering_convention=None, modifiers=[])
-        assert resolve_template_name("brief", structure) == "brief_narrative"
+        assert resolve_template_name("format-matched", structure) == "format-matched_narrative"
 
-    def test_brief_standardized_template_routes_to_domain(self) -> None:
+    def test_format_matched_standardized_template_routes_to_domain(self) -> None:
         """Format routing stops at narrative vs. domain-organized."""
         structure = BhcStructure(
             category="standardized_template", numbering_convention=None, modifiers=[]
         )
-        assert resolve_template_name("brief", structure) == "brief_domain"
+        assert resolve_template_name("format-matched", structure) == "format-matched_domain"
 
     @pytest.mark.parametrize("convention", ["#", None])
-    def test_brief_domain_ignores_numbering_convention(self, convention: str | None) -> None:
-        """A domain-organized BHC resolves to 'brief_domain' regardless of
+    def test_format_matched_domain_ignores_numbering_convention(
+        self, convention: str | None
+    ) -> None:
+        """A domain-organized BHC resolves to 'format-matched_domain' regardless of
         numbering convention.
         """
         structure = BhcStructure(
             category="domain_organized", numbering_convention=convention, modifiers=[]
         )
-        assert resolve_template_name("brief", structure) == "brief_domain"
+        assert resolve_template_name("format-matched", structure) == "format-matched_domain"
 
     @pytest.mark.parametrize(
         "modifiers", [["acute_chronic"], ["acute_chronic", "transitional_issues"]]
     )
-    def test_brief_domain_ignores_modifiers(self, modifiers: list[str]) -> None:
+    def test_format_matched_domain_ignores_modifiers(self, modifiers: list[str]) -> None:
         """Format routing stops at narrative vs. domain-organized."""
         structure = BhcStructure(
             category="domain_organized", numbering_convention="#", modifiers=modifiers
         )
-        assert resolve_template_name("brief", structure) == "brief_domain"
+        assert resolve_template_name("format-matched", structure) == "format-matched_domain"
 
-    def test_brief_domain_transitional_only_falls_through(self) -> None:
+    def test_format_matched_domain_transitional_only_falls_through(self) -> None:
         """transitional_issues alone does not trigger its own template."""
         structure = BhcStructure(
             category="domain_organized",
             numbering_convention="#",
             modifiers=["transitional_issues"],
         )
-        assert resolve_template_name("brief", structure) == "brief_domain"
+        assert resolve_template_name("format-matched", structure) == "format-matched_domain"
 
     @pytest.mark.parametrize("category", ["narrative", "domain_organized"])
-    def test_thorough_skips_format_routing(self, category: str) -> None:
+    def test_enumerated_skips_format_routing(self, category: str) -> None:
         structure = BhcStructure(category=category, numbering_convention=None, modifiers=[])
-        assert resolve_template_name("thorough", structure) == "thorough"
+        assert resolve_template_name("enumerated", structure) == "enumerated"
 
 
 def _make_notes() -> list[NoteEvent]:
@@ -183,7 +185,7 @@ def prompts_dir(tmp_path: Path) -> Path:
         "{admission_data}"
     )
 
-    (d / "brief_narrative.txt").write_text(
+    (d / "format-matched_narrative.txt").write_text(
         "You are a clinical assistant.\n"
         "\n"
         "Write as a continuous narrative.\n"
@@ -246,26 +248,26 @@ class TestRealTemplates:
         result = build_prompt(_make_bundle(), "unformatted")
         assert result.template_name == "unformatted"
 
-    def test_brief_narrative(self) -> None:
+    def test_format_matched_narrative(self) -> None:
         bundle = self._bundle_with_structure(
             category="narrative", numbering_convention=None, modifiers=[]
         )
-        result = build_prompt(bundle, "brief")
-        assert result.template_name == "brief_narrative"
+        result = build_prompt(bundle, "format-matched")
+        assert result.template_name == "format-matched_narrative"
 
-    def test_brief_domain(self) -> None:
+    def test_format_matched_domain(self) -> None:
         bundle = self._bundle_with_structure(
             category="domain_organized", numbering_convention="#", modifiers=[]
         )
-        result = build_prompt(bundle, "brief")
-        assert result.template_name == "brief_domain"
+        result = build_prompt(bundle, "format-matched")
+        assert result.template_name == "format-matched_domain"
 
-    def test_brief_domain_numbered_routes_to_domain(self) -> None:
+    def test_format_matched_domain_numbered_routes_to_domain(self) -> None:
         bundle = self._bundle_with_structure(
             category="domain_organized", numbering_convention="N.", modifiers=[]
         )
-        result = build_prompt(bundle, "brief")
-        assert result.template_name == "brief_domain"
+        result = build_prompt(bundle, "format-matched")
+        assert result.template_name == "format-matched_domain"
 
 
 _REAL_PROMPTS_DIR = Path(__file__).parents[1] / "prompts"
@@ -284,27 +286,27 @@ def _without(paragraphs: list[str], index: int) -> list[str]:
 
 
 class TestPromptVariantDifferences:
-    """brief and thorough each differ from unformatted in exactly one paragraph,
+    """format-matched and enumerated each differ from unformatted in exactly one paragraph,
     so a score difference between them comes from that instruction alone.
     """
 
     def test_template_set(self) -> None:
         assert {p.stem for p in _REAL_PROMPTS_DIR.glob("*.txt")} == {
             "unformatted",
-            "brief_narrative",
-            "brief_domain",
-            "thorough",
+            "format-matched_narrative",
+            "format-matched_domain",
+            "enumerated",
         }
 
     @pytest.mark.parametrize("fmt", ["narrative", "domain"])
-    def test_unformatted_is_brief_without_format(self, fmt: str) -> None:
+    def test_unformatted_is_format_matched_without_format(self, fmt: str) -> None:
         assert _paragraphs("unformatted") == _without(
-            _paragraphs(f"brief_{fmt}"), _FORMAT_PARAGRAPH
+            _paragraphs(f"format-matched_{fmt}"), _FORMAT_PARAGRAPH
         )
 
-    def test_thorough_is_unformatted_with_thoroughness(self) -> None:
-        assert _without(_paragraphs("thorough"), _CONTENT_PARAGRAPH) == _without(
+    def test_enumerated_is_unformatted_with_thoroughness(self) -> None:
+        assert _without(_paragraphs("enumerated"), _CONTENT_PARAGRAPH) == _without(
             _paragraphs("unformatted"), _CONTENT_PARAGRAPH
         )
-        thoroughness = _paragraphs("thorough")[_CONTENT_PARAGRAPH]
+        thoroughness = _paragraphs("enumerated")[_CONTENT_PARAGRAPH]
         assert thoroughness != _paragraphs("unformatted")[_CONTENT_PARAGRAPH]

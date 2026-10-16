@@ -38,7 +38,7 @@ from mimic_data_prep.mimic import BHC_JSONL
 logger = logging.getLogger(__name__)
 
 REPORT_NAME = "length"
-# The word range the brief and unformatted prompts ask for.
+# The word range the format-matched and unformatted prompts ask for.
 TARGET_WORDS = (250, 600)
 # Every run's cohort (experiment, prompt test, smoke) is a subset of the experiment cohort.
 STRATA_COHORT_FILE = EXPERIMENT_COHORT_FILE

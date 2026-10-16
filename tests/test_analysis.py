@@ -20,20 +20,20 @@ class TestComposeSeriesLabels:
         [
             # Same selection, different prompts: the prompt tells them apart.
             (
-                ["all-records/unformatted-prompt", "all-records/brief-prompt"],
-                ["unformatted-prompt", "brief-prompt"],
+                ["all-records/unformatted-prompt", "all-records/format-matched-prompt"],
+                ["unformatted-prompt", "format-matched-prompt"],
             ),
             # Same prompt, different selections: the selection tells them apart.
             (
-                ["all-records/brief-prompt", "oracle-n-0/brief-prompt"],
+                ["all-records/format-matched-prompt", "oracle-n-0/format-matched-prompt"],
                 ["all-records", "oracle-n-0"],
             ),
             (
-                ["all-records/unformatted-prompt", "oracle-n-0/brief-prompt"],
-                ["all-records/unformatted-prompt", "oracle-n-0/brief-prompt"],
+                ["all-records/unformatted-prompt", "oracle-n-0/format-matched-prompt"],
+                ["all-records/unformatted-prompt", "oracle-n-0/format-matched-prompt"],
             ),
             # One run has nothing to tell apart, so it keeps its whole name.
-            (["all-records/brief-prompt"], ["all-records/brief-prompt"]),
+            (["all-records/format-matched-prompt"], ["all-records/format-matched-prompt"]),
         ],
     )
     def test_labels_each_run_by_what_differs(self, runs: list[str], short: list[str]):
@@ -67,8 +67,8 @@ class TestSeriesMetricMeans:
                 "series_label": [
                     "unformatted \u00b7 gemma_4_e4b",
                     "unformatted \u00b7 gemma_4_e4b",
-                    "brief \u00b7 gemma_4_e4b",
-                    "brief \u00b7 gemma_4_e4b",
+                    "format-matched \u00b7 gemma_4_e4b",
+                    "format-matched \u00b7 gemma_4_e4b",
                 ],
                 "sapbert/f1": [0.8, 0.6, 0.9, 0.7],
                 "rouge1/f1": [0.4, 0.2, 0.5, 0.3],
@@ -79,14 +79,14 @@ class TestSeriesMetricMeans:
     def test_returns_one_row_per_series(self):
         out = series_metric_means(self._sample(), ["sapbert/f1", "rouge1/f1"])
         assert sorted(out.index.tolist()) == [
-            "brief \u00b7 gemma_4_e4b",
+            "format-matched \u00b7 gemma_4_e4b",
             "unformatted \u00b7 gemma_4_e4b",
         ]
 
     def test_mean_per_series(self):
         out = series_metric_means(self._sample(), ["sapbert/f1"])
         assert out.loc["unformatted \u00b7 gemma_4_e4b", "sapbert/f1"] == pytest.approx(0.7)
-        assert out.loc["brief \u00b7 gemma_4_e4b", "sapbert/f1"] == pytest.approx(0.8)
+        assert out.loc["format-matched \u00b7 gemma_4_e4b", "sapbert/f1"] == pytest.approx(0.8)
 
     def test_stratified_multi_index(self):
         out = series_metric_means(self._sample(), ["sapbert/f1"], stratify_by="bhc_category")
