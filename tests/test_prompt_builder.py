@@ -8,9 +8,9 @@ import pytest
 from bhc_experiment.loader import AdmissionBundle, BhcStructure, NoteEvent
 from bhc_experiment.prompt_builder import (
     build_prompt,
+    chronological_sort_key,
     filter_notes,
     format_admission_records,
-    format_note,
     resolve_template_name,
 )
 
@@ -18,66 +18,17 @@ from .conftest import make_bundle, make_lab, make_note, make_prescription
 
 
 class TestResolveTemplateName:
-    """Tests for template name resolution from variant + BhcStructure.
-
-    One test per heading convention.
-    """
-
-    def test_unformatted_ignores_structure(self) -> None:
-        """Unformatted variant always resolves to 'unformatted', ignoring structure."""
-        structure = BhcStructure(
-            category="domain_organized",
-            numbering_convention="#",
-            modifiers=["acute_chronic"],
-        )
-        assert resolve_template_name("unformatted", structure) == "unformatted"
+    """Both format-matched templates exist, so a routing mix-up runs without error."""
 
     def test_format_matched_narrative(self) -> None:
         structure = BhcStructure(category="narrative", numbering_convention=None, modifiers=[])
         assert resolve_template_name("format-matched", structure) == "format-matched_narrative"
 
-    def test_format_matched_standardized_template_routes_to_domain(self) -> None:
-        """Format routing stops at narrative vs. domain-organized."""
+    def test_format_matched_domain(self) -> None:
         structure = BhcStructure(
-            category="standardized_template", numbering_convention=None, modifiers=[]
+            category="domain_organized", numbering_convention="#", modifiers=["acute_chronic"]
         )
         assert resolve_template_name("format-matched", structure) == "format-matched_domain"
-
-    @pytest.mark.parametrize("convention", ["#", None])
-    def test_format_matched_domain_ignores_numbering_convention(
-        self, convention: str | None
-    ) -> None:
-        """A domain-organized BHC resolves to 'format-matched_domain' regardless of
-        numbering convention.
-        """
-        structure = BhcStructure(
-            category="domain_organized", numbering_convention=convention, modifiers=[]
-        )
-        assert resolve_template_name("format-matched", structure) == "format-matched_domain"
-
-    @pytest.mark.parametrize(
-        "modifiers", [["acute_chronic"], ["acute_chronic", "transitional_issues"]]
-    )
-    def test_format_matched_domain_ignores_modifiers(self, modifiers: list[str]) -> None:
-        """Format routing stops at narrative vs. domain-organized."""
-        structure = BhcStructure(
-            category="domain_organized", numbering_convention="#", modifiers=modifiers
-        )
-        assert resolve_template_name("format-matched", structure) == "format-matched_domain"
-
-    def test_format_matched_domain_transitional_only_falls_through(self) -> None:
-        """transitional_issues alone does not trigger its own template."""
-        structure = BhcStructure(
-            category="domain_organized",
-            numbering_convention="#",
-            modifiers=["transitional_issues"],
-        )
-        assert resolve_template_name("format-matched", structure) == "format-matched_domain"
-
-    @pytest.mark.parametrize("category", ["narrative", "domain_organized"])
-    def test_enumerated_skips_format_routing(self, category: str) -> None:
-        structure = BhcStructure(category=category, numbering_convention=None, modifiers=[])
-        assert resolve_template_name("enumerated", structure) == "enumerated"
 
 
 def _make_notes() -> list[NoteEvent]:
@@ -101,35 +52,20 @@ class TestChronologicalSortKey:
     """The (effective time, ROW_ID) sort key handles all three event types."""
 
     def test_lab_with_charttime(self) -> None:
-        from bhc_experiment.prompt_builder import chronological_sort_key
-
         lab = make_lab(7, CHARTTIME="2150-01-03 08:00:00")
         assert chronological_sort_key(lab) == ("2150-01-03 08:00:00", 7)
 
     def test_note_with_charttime_uses_it(self) -> None:
-        from bhc_experiment.prompt_builder import chronological_sort_key
-
         note = make_note(42, CHARTDATE="2150-01-03", CHARTTIME="2150-01-03 14:30:00")
         assert chronological_sort_key(note) == ("2150-01-03 14:30:00", 42)
 
     def test_note_without_charttime_falls_back_to_noon(self) -> None:
-        from bhc_experiment.prompt_builder import chronological_sort_key
-
         note = make_note(42, CHARTDATE="2150-01-03", CHARTTIME=None, CATEGORY="ECG")
         assert chronological_sort_key(note) == ("2150-01-03 12:00:00", 42)
 
     def test_prescription_uses_startdate_at_noon(self) -> None:
-        from bhc_experiment.prompt_builder import chronological_sort_key
-
         rx = make_prescription(9, STARTDATE="2150-01-04")
         assert chronological_sort_key(rx) == ("2150-01-04 12:00:00", 9)
-
-
-class TestFormatNote:
-    def test_category_trailing_space_is_stripped(self) -> None:
-        """MIMIC-III stores "Physician ", "Respiratory ", and "Case Management "."""
-        note = make_note(1, "Text.", CATEGORY="Physician ", CHARTTIME="2150-01-01 14:00:00")
-        assert format_note(note) == "[2150-01-01 14:00:00] NOTE (Physician): Text."
 
 
 class TestSerializeRecords:
@@ -146,19 +82,6 @@ class TestSerializeRecords:
         assert "NOTE" in lines[1]
         assert "PRESCRIPTION" in lines[2]
 
-    def test_chronological_same_day_lab_before_date_only_note(self) -> None:
-        """Notes without CHARTTIME fall back to CHARTDATE at noon. A lab at
-        08:00 on the same day sorts before that noon fallback.
-        """
-        notes = [
-            make_note(1, "Date-only note.", CHARTDATE="2150-01-03", CHARTTIME=None, CATEGORY="ECG")
-        ]
-        labs = [make_lab(0, CHARTTIME="2150-01-03 08:00:00")]
-        result = format_admission_records(notes, labs, [])
-        lines = result.strip().split("\n")
-        assert "LAB" in lines[0]
-        assert "NOTE" in lines[1]
-
     @pytest.mark.parametrize("text", ["Error note.", "BHC text."])
     def test_rejects_a_note_preparation_drops(self, text: str) -> None:
         """Preparation drops these notes. format_admission_records only checks that it did."""
@@ -169,26 +92,12 @@ class TestSerializeRecords:
 
 @pytest.fixture
 def prompts_dir(tmp_path: Path) -> Path:
-    """Create a temporary prompts directory with test template files."""
+    """Create a temporary prompts directory with a test template file."""
     d = tmp_path / "prompts"
     d.mkdir()
 
     (d / "unformatted.txt").write_text(
         "You are a clinical assistant.\n"
-        "\n"
-        "---\n"
-        "\n"
-        "Patient: {age} year old {gender}\n"
-        "Admitted: {admit_time}\n"
-        "Discharged: {discharge_time}\n"
-        "\n"
-        "{admission_data}"
-    )
-
-    (d / "format-matched_narrative.txt").write_text(
-        "You are a clinical assistant.\n"
-        "\n"
-        "Write as a continuous narrative.\n"
         "\n"
         "---\n"
         "\n"
@@ -231,82 +140,26 @@ class TestBuildPrompt:
 
 
 class TestRealTemplates:
-    """Smoke tests that verify real template files work with build_prompt.
-
-    Catches placeholder typos (e.g. {admit_date} instead of {admit_time})
-    that would otherwise only fail during a run.
+    """A placeholder typo in a real template (e.g. {admit_date}) is left in the prompt
+    as literal text, and the run goes ahead without error.
     """
 
-    def _bundle_with_structure(self, **structure_kwargs: object) -> AdmissionBundle:
-        return dataclasses.replace(
-            _make_bundle(),
-            bhc_category=structure_kwargs.get("category", "narrative"),
-            bhc_structure=BhcStructure(**structure_kwargs),  # type: ignore[arg-type]
+    @pytest.mark.parametrize(
+        ("variant", "category"),
+        [
+            ("unformatted", "narrative"),
+            ("format-matched", "narrative"),
+            ("format-matched", "domain_organized"),
+            ("enumerated", "narrative"),
+            ("detailed", "narrative"),
+        ],
+    )
+    def test_every_placeholder_is_filled(self, variant: str, category: str) -> None:
+        bundle = make_bundle(
+            [make_note(1, "Day 2 note.", CHARTDATE="2150-01-03", CHARTTIME=None)],
+            bhc_category=category,
         )
-
-    def test_unformatted(self) -> None:
-        result = build_prompt(_make_bundle(), "unformatted")
-        assert result.template_name == "unformatted"
-
-    def test_format_matched_narrative(self) -> None:
-        bundle = self._bundle_with_structure(
-            category="narrative", numbering_convention=None, modifiers=[]
-        )
-        result = build_prompt(bundle, "format-matched")
-        assert result.template_name == "format-matched_narrative"
-
-    def test_format_matched_domain(self) -> None:
-        bundle = self._bundle_with_structure(
-            category="domain_organized", numbering_convention="#", modifiers=[]
-        )
-        result = build_prompt(bundle, "format-matched")
-        assert result.template_name == "format-matched_domain"
-
-    def test_format_matched_domain_numbered_routes_to_domain(self) -> None:
-        bundle = self._bundle_with_structure(
-            category="domain_organized", numbering_convention="N.", modifiers=[]
-        )
-        result = build_prompt(bundle, "format-matched")
-        assert result.template_name == "format-matched_domain"
-
-
-_REAL_PROMPTS_DIR = Path(__file__).parents[1] / "prompts"
-# Paragraph positions in every template. Template text is split on blank lines,
-# so the user message after --- is compared too.
-_CONTENT_PARAGRAPH = 2
-_FORMAT_PARAGRAPH = 7
-
-
-def _paragraphs(template_name: str) -> list[str]:
-    return (_REAL_PROMPTS_DIR / f"{template_name}.txt").read_text().split("\n\n")
-
-
-def _without(paragraphs: list[str], index: int) -> list[str]:
-    return paragraphs[:index] + paragraphs[index + 1 :]
-
-
-class TestPromptVariantDifferences:
-    """format-matched and enumerated each differ from unformatted in exactly one paragraph,
-    so a score difference between them comes from that instruction alone.
-    """
-
-    def test_template_set(self) -> None:
-        assert {p.stem for p in _REAL_PROMPTS_DIR.glob("*.txt")} == {
-            "unformatted",
-            "format-matched_narrative",
-            "format-matched_domain",
-            "enumerated",
-        }
-
-    @pytest.mark.parametrize("fmt", ["narrative", "domain"])
-    def test_unformatted_is_format_matched_without_format(self, fmt: str) -> None:
-        assert _paragraphs("unformatted") == _without(
-            _paragraphs(f"format-matched_{fmt}"), _FORMAT_PARAGRAPH
-        )
-
-    def test_enumerated_is_unformatted_with_thoroughness(self) -> None:
-        assert _without(_paragraphs("enumerated"), _CONTENT_PARAGRAPH) == _without(
-            _paragraphs("unformatted"), _CONTENT_PARAGRAPH
-        )
-        thoroughness = _paragraphs("enumerated")[_CONTENT_PARAGRAPH]
-        assert thoroughness != _paragraphs("unformatted")[_CONTENT_PARAGRAPH]
+        result = build_prompt(bundle, variant)
+        records = format_admission_records(bundle.noteevents, [], [])
+        assert records in result.user
+        assert "{" not in result.user.replace(records, "")

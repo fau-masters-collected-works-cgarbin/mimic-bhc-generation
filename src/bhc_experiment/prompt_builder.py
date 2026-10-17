@@ -23,10 +23,10 @@ def resolve_template_name(variant: str, structure: BhcStructure) -> str:
 
     Returns the template name without extension (e.g., "format-matched_domain").
 
-    "unformatted" and "enumerated" use one template for every admission.
-    "format-matched" gets a format suffix from the BHC structure.
+    "unformatted", "enumerated" and "detailed" use one template for every
+    admission. "format-matched" gets a format suffix from the BHC structure.
     """
-    if variant in ("unformatted", "enumerated"):
+    if variant in ("unformatted", "enumerated", "detailed"):
         return variant
 
     suffix = _resolve_format_suffix(structure)

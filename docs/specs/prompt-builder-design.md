@@ -8,9 +8,9 @@ Template files live in `prompts/`. See `prompts/README.md` for the instruction-o
 
 **The template resolves per admission.** Ground-truth BHCs use different organizational formats. Matching the prompt's structural instruction to the ground truth keeps format mismatch from inflating ROUGE and BERTScore differences when the clinical content is equivalent.
 
-**The variant and the BHC format are chosen separately.** The prompt variant (`unformatted`, `format-matched`, `enumerated`) is the experimental variable and stays fixed for a run. Under `format-matched`, the BHC format is picked per admission. They are independent because they test different things: the variant asks whether format guidance or an explicit thoroughness instruction changes generation, while matching the format controls for format-driven evaluation noise.
+**The variant and the BHC format are chosen separately.** The prompt variant (`unformatted`, `format-matched`, `enumerated`, `detailed`) is the experimental variable and stays fixed for a run. Under `format-matched`, the BHC format is picked per admission. They are independent because they test different things: the variant asks whether format guidance or an explicit thoroughness instruction changes generation, while matching the format controls for format-driven evaluation noise.
 
-**Each variant differs from `unformatted` in one paragraph.** `format-matched` is `unformatted` plus the format paragraph, so comparing the two measures the format instruction alone. `enumerated` is `unformatted` with the brevity paragraph replaced by a thoroughness instruction, so comparing the two measures what the model is asked to include. Every other paragraph is identical across all four templates, including the coverage and disposition instructions, which earlier differed between the narrative and domain templates. `TestPromptVariantDifferences` in `tests/test_prompt_builder.py` enforces this.
+**Each variant differs from `unformatted` in one paragraph.** `format-matched` is `unformatted` plus the format paragraph, so comparing the two measures the format instruction alone. `enumerated` is `unformatted` with the brevity paragraph replaced by a thoroughness instruction, so comparing the two measures what the model is asked to include. Every other paragraph is identical across those four templates, including the coverage and disposition instructions, which earlier differed between the narrative and domain templates. `detailed` is the exception. It is `enumerated` with the scope and coverage paragraphs rewritten, so that every paragraph asks for the same thing.
 
 **The brevity paragraph names a length.** The earlier sentence "Prioritize brevity over completeness of detail" cut Gemma's output under the unformatted prompt to a median 0.33 of the reference length, with 78 of 116 admissions under half. `scripts/analysis/length.py` computes both figures from the archived run `archive/obsolete/case0_minimal/case0_minimal-2026-07-14-dedup-sentence`. The earlier sentence also pulled against the coverage paragraph's "Do not omit documented problems". The paragraph now asks for 250 to 600 words, the rounded interquartile range (242 to 617 words) of the 51,015 successfully extracted BHCs outside the experiment cohort, reported at the top of the same script's output. Leaving out the cohort keeps the scored references out of the prompt. The thoroughness paragraph replaces the length sentence along with the rest of the brevity paragraph.
 
@@ -123,6 +123,21 @@ What the tables show:
 - **v3's own effect is small next to v1 and v2's.** Most of the change from v0 came with the length target. v3 moved F1 by at most 0.012 on any variant and metric, the size of the noise at this sample size.
 
 These are 14 admissions per model. A change of about 0.02 in a mean is within noise for a single model, so the pattern across models and metrics carries more weight than any one cell. Every step bundles several changes, so no single instruction's effect can be read from the tables.
+
+### 2026-10-17: `detailed`, enumeration without the condensing paragraphs
+
+Change: a new variant, `detailed`, which is `enumerated` with two shared paragraphs rewritten:
+
+- **Scope.** "A Brief Hospital Course summarizes the clinical trajectory from presentation to discharge, not the full medical record" became "A Brief Hospital Course gives a complete account of the hospital stay from presentation to discharge". The sentence that leaves the history before presentation to other sections stays.
+- **Coverage.** "Prioritize covering all documented problems over detailed discussion of any single one" became "For each problem, describe the treatment and how the problem evolved".
+
+Reason: both sentences asked for a condensed summary, against `enumerated`'s request to list each problem's findings, medications and specific names. The analysis of the `enumerated` run found that it listed no more problems: it swapped in medications and values at about the same word count, and Gemma wrote 52% of its outputs as a single paragraph. So stage 2 of the prompt selection funnel did not test listing the details. `detailed` replaces `enumerated` as the stage 2 challenger. `enumerated` stays runnable as the record of the first attempt.
+
+`detailed` differs from `unformatted` in three paragraphs, so stage 2 now compares two designs, each consistent with its own intent.
+
+Expected effects, against `unformatted` on the same admissions: longer outputs in words, more problems described with their treatment and course, higher recall and lower precision on every metric, and more truncations, Llama most of all.
+
+Prompt test: pending.
 
 ### 2026-10-16: thoroughness without the format instruction
 

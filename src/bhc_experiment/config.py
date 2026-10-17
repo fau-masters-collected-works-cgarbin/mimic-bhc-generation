@@ -121,8 +121,10 @@ PROMPT_TEST_COHORT_FILE = "prompt_test_cohort.json"
 FILTERED_POOL_FILE = "filtered_pool.json"
 
 # "format-matched" and "enumerated" each differ from "unformatted" in one
-# paragraph: the format instruction and the thoroughness instruction.
-PROMPT_VARIANTS = ("format-matched", "unformatted", "enumerated")
+# paragraph: the format instruction and the thoroughness instruction. "detailed"
+# is "enumerated" with the scope and coverage paragraphs that asked for a condensed
+# summary rewritten to ask for detail.
+PROMPT_VARIANTS = ("format-matched", "unformatted", "enumerated", "detailed")
 DEDUPLICATIONS = ("none", "sentence")
 
 INFERENCE = InferenceConfig(temperature=0.0, max_completion_tokens=4096, frequency_penalty=0.5)
