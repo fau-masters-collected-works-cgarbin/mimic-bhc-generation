@@ -139,7 +139,23 @@ The October `enumerated` run used the format-routed templates. It is archived, s
 
 Expected effects, against `unformatted` on the same admissions: longer outputs, higher recall and lower precision on every metric. Both prompts keep the coverage paragraph, so both ask for every documented problem. They differ in the detail per problem and in the length budget.
 
-Prompt test: pending.
+Prompt test: `enumerated` only, since no other template changed (commit `8ef16a7`, 42 generations, no failures). Counts against the previous `enumerated` test (attempt 3, the format-routed version), and median generated words beside `unformatted` on the same admissions:
+
+| Model | Truncated | Title echoes | Standalone missing-information lines | Median words (new / previous / `unformatted`) |
+| --- | --- | --- | --- | --- |
+| Gemma | 0 / 0 | 0 / 0 | 0 / 0 | 305.5 / 372.5 / 269 |
+| Llama | 0 / 0 | 0 / 0 | 0 / 3 | 294.5 / 467 / 298 |
+| Qwen | 0 / 1 | 2 / 0 | 0 / 0 | 342.5 / 489 / 334 |
+
+- **The title-echo gate failed on Qwen by one.** Both echoes are a title heading on the first line, at 96K and 112K, the long-input pattern the closing reminder mostly fixed. The October `unformatted` run had no Qwen echo in 116 admissions.
+- **Length did not follow the expected effect.** Every model wrote about as much as under `unformatted`. The format-routed version ran 67 to 173 words longer, so that length came from the format paragraph or the old "distinct clinical concept" sentence, which this change removed together.
+- **Every selection F1 fell against `unformatted`** on ROUGE-L, SapBERT, concept and MEDCON, for all three models. Concept recall moved by -0.007 to +0.005. At 14 admissions this is direction only.
+
+Decision: run the full 116 admissions despite the echo gate. The echoes are title formatting on two long admissions and do not bear on what stage 2 asks. Stage 2 is decided on the full run with the funnel's rule.
+
+Full run: `enumerated` on all 116 admissions for the three models (commit `8ef16a7`, 348 generations, no failures). Against `unformatted`, 11 of the 12 selection F1s fell and none rose, so stage 2 of the prompt selection funnel kept `unformatted`. Precision fell on every metric while recall and length barely moved. Truncations: Llama 3, against 2 under `unformatted`, and none on Gemma or Qwen. The 14 prompt test admissions reproduced exactly on all three models. `scripts/analysis/run_comparison.py` in `phd-dissertation-data-prep` produces these numbers. The funnel document has the table.
+
+Decision: `unformatted` stays the prompt of record. `enumerated` stays runnable as the stage 2 record.
 
 ### 2026-10-15: records markers, closing reminder, lab-label guard, filler ban
 
