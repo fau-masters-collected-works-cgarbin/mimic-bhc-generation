@@ -59,30 +59,27 @@ RUN=../phd-dissertation-experiment-results/results/prompt-test/unformatted-promp
 uv run python scripts/pipeline/score_results.py $RUN
 uv run python scripts/analysis/length.py $RUN
 uv run python scripts/analysis/completion.py $RUN
+uv run python scripts/analysis/output_checks.py $RUN
 ```
 
 Watch length and truncations while the prompt test runs, and stop on a failed gate. The change passes when these hold on the worst model, except expected effects, which are judged pooled over the three models:
 
 - **Length.** The median generated words fall within the 250 to 600 target, where the variant has one.
 - **Format adherence under `format-matched`.** Narrative outputs have no headers and domain-organized outputs use `#` problem headers.
-- **No regressions.** Truncations, title echoes and standalone "not documented" lines are no more than in the previous prompt test plus one.
+- **No regressions.** Truncations, title echoes and standalone "not documented" lines are no more than in the previous prompt test plus one. `completion.md` counts truncations and `output_checks.md` the rest.
 - **Expected effects.** Each effect the change log entry names moves in the named direction.
 
 The prompt test admissions come from the scored cohort, so their metric scores show direction only. Revising wording to raise them would tune the prompt on scored admissions. When the prompt test is done, move its runs to the results repo's `archive/one-off/`.
 
-## Generation settings: the DRY sampler
+## Generation settings: the DRY sampler for Llama
 
-Llama 3.2 3B generates with llama.cpp's DRY sampler on top of the shared settings. DRY penalizes extending a token sequence that already appears in its window, more steeply for longer repeats. The parameters are `DRY_SAMPLER` in `src/bhc_experiment/config.py`. The per-model switch is `dry_sampler` in `src/mimic_data_prep/models.py`.
+We noticed that Llama 3.2 3B repeats passages and exceeds the maximum token length in some admissions. To counter that, we set llama.cpp's DRY sampler on top of the shared settings.
 
-- **Why Llama only.** Llama's truncations are repetition loops that repeat every 200 to 700 tokens, which the frequency penalty's 64-token window cannot see. Gemma never truncated and Qwen rarely did, so for them DRY would mostly add its costs. The price is a confound: Llama's completion rate and output length come from a different sampler, and cross-model statements about either name it.
-- **Verification.** llama-server accepts a misspelled sampler key without error. After every generation, `verify_sampler_applied` reads the slot's parameters back from `/slots` and stops the run if a DRY setting was not applied.
-- **Decision.** DRY stays on for Llama, for comparability with the runs already done. At 116 admissions it showed no measured benefit, with truncations matching July's, and it adds variation between re-runs of the same prompt.
+Llama's truncations are repetition loops that repeat every 200 to 700 tokens, which the frequency penalty's 64-token window cannot see. The price is a confound: Llama's completion rate and output length come from a different sampler, and cross-model statements about either name it.
 
 ## Prompt change log
 
 Each entry records one change to the prompt wording, or a set tested together, with its outcome, in the order tested. The commit of each tested change is in the prompt test run records, under `git_commit`. `scripts/analysis/prompt_versions.py` in the `phd-dissertation-data-prep` repository scores tests 1 to 3 on the prompt test admissions.
-
-`brief` was renamed `format-matched` on 2026-10-16. `thorough`, a format-routed thoroughness variant, was retired the same day.
 
 ### Test 1: length target, physician role, no abbreviation instruction
 
@@ -90,24 +87,25 @@ Replaced the brevity sentence with the 250 to 600 word target, removed the abbre
 
 ### Test 2: length target as an instruction
 
-Changed "A typical Brief Hospital Course runs 250 to 600 words" to "Write 250 to 600 words" (commit `62e1d60`), because Gemma's median output fell just under the target. The prompt test passed the length gate on every variant and model. The regression criterion failed as written, because Llama truncates and echoes the title under every prompt. Decision: keep the target and address the failures in the next change.
+Changed "A typical Brief Hospital Course runs 250 to 600 words" to "Write 250 to 600 words", because Gemma's median output fell just under the target. The prompt test passed the length gate on every variant and model. The regression criterion failed as written, because Llama truncates and echoes the title under every prompt. Decision: keep the target and address the failures in the next change.
 
 ### Test 3: records markers, closing reminder, lab-label guard, filler ban
 
-Added the start and end markers, the closing reminder and the grounding guards to every template (commit `c6175d2`). An aggregate inspection of the previous test found title echoes on long inputs, Llama dropping the end of long stays, and lab values turned into diagnosis labels. Candidate changes motivated by overlap with the references were dropped, to keep from fitting the prompt to how MIMIC authors write. The prompt test passed every gate except the expected fall in inline "not documented" phrasing, which is too rare to measure on 14 admissions. On the prompt test admissions, title echoes fell from 18 to 1 and Llama truncations from 4 to 0. The truncation drop did not hold on the full cohort. The filler ban stays because the gates show no harm. In the full run (commit `989d7f5`), `unformatted` gained the most against July on Gemma and Qwen, and less than the prompt test showed.
+Added the start and end markers, the closing reminder and the grounding guards to every template. An aggregate inspection of the previous test found title echoes on long inputs, Llama dropping the end of long stays, and lab values turned into diagnosis labels. Candidate changes motivated by overlap with the references were dropped, to keep from fitting the prompt to how MIMIC authors write. The prompt test passed every gate except the expected fall in inline "not documented" phrasing, which is too rare to measure on 14 admissions. On the prompt test admissions, title echoes fell from 18 to 1 and Llama truncations from 4 to 0. The truncation drop did not hold on the full cohort. The filler ban stays because the gates show no harm. In the full run (commit `989d7f5`), `unformatted` gained the most against July on Gemma and Qwen, and less than the prompt test showed.
 
 ### Test 4: `detailed`, a request to list the documented details
 
-Added `detailed` (commit `3d87cad`) for stage 2 of the selection, after stage 1 kept `unformatted`. The prompt test passed every gate. The full run moved all 12 selection F1s down, so `unformatted` stays the selected prompt and `detailed` stays runnable as the stage 2 record.
+Added `detailed` for stage 2 of the selection, after stage 1 kept `unformatted`. The prompt test passed every gate. The full run moved all 12 selection F1s down, so `unformatted` stays the selected prompt and `detailed` stays runnable as the stage 2 record.
 
 ## Appendix: vendor guidance on in-prompt formatting
 
-Checked 2026-10-12 for the three models in the experiment: whether the vendors recommend markdown headers, XML-style tags or bold labels, how to delimit long input, and where instructions go.
+We researched vendor documents for guidance for prompt format guidance and found the following.
 
 - **Model vendors.** The Meta, Google and Qwen docs for these model versions give no guidance on content formatting, long-input delimiting or instruction placement. Their example prompts are plain prose.
 - **General guides.** Google's Gemini prompting guide recommends tags or headings, long context first and instructions at the end. Alibaba Cloud's Model Studio guide recommends fencing long text with rare delimiters. Neither names these models.
-- **Evidence that format matters.** He et al. 2024 report up to 40% variation across prompt formats on GPT-3.5. No study we found measures these three small models.
-- **Conclusion.** The templates stay plain prose, one instruction per paragraph, with the instructions in the system message ahead of the records, matching the vendors' examples. Tags, headers or instructions after the records would be a new prompt variable for a separate ablation.
+- **Evidence that format matters.** He et al. 2024 report up to 40% variation across prompt formats on GPT-3.5 and noted that newer models like GPT-4 are less sensitive to prompt format. No study we found measures these three small models.
+
+**Conclusion.** The templates stay plain prose, one instruction per paragraph, with the instructions in the system message ahead of the records, matching the vendors' examples. Tags, headers or instructions after the records would be a new prompt variable for a separate ablation.
 
 ## References
 
