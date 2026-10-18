@@ -15,6 +15,8 @@ The prompt was selected in two stages, each testing one question:
 
 Each stage compares the current winner with one challenger on all 116 admissions for the three models, paired by admission. The stage reads the direction of F1 on ROUGE-L, SapBERT, scispaCy concept and MEDCON. For each model and metric, the F1 moved up when the challenger's mean was higher and more admissions went up than down, and down in the reverse case. The challenger advances when more of the 12 results moved up than down. A tie keeps the incumbent. `unformatted` won both stages. `scripts/analysis/run_comparison.py` in the `phd-dissertation-data-prep` repository computes the stages.
 
+SapBERT reads only the first 510 wordpieces of each text, so it scores less of a longer output. `scripts/analysis/sapbert_window.py` reports each run's share past that window. Under `detailed`, 44% to 72% of outputs ran past it, against 1% to 25% under `unformatted`, so SapBERT's three stage 2 votes partly reflect the window. Even without SapBERT, `detailed` loses: ROUGE-L, concept and MEDCON F1 also fell on all three models.
+
 ## What each variant tests
 
 ### `format-matched`: does the reference's format affect the scores?
