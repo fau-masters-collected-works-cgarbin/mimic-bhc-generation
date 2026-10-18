@@ -2,13 +2,11 @@
 
 ## Purpose
 
-`src/bhc_experiment/prompt_builder.py` takes an admission's records (an `AdmissionBundle`) and a prompt variant and produces the prompt. The module documents the template resolution, the filter checks and the chronological sort key at their definitions. This spec covers the experiment-level reasons behind them. Template files live in `prompts/`.
-
 The prompt is an experiment variable. If a prompt instruction changes the scores, the result reflects the instruction as well as the model, which confounds the model comparison. We tested three prompt variants to measure the effect of the instructions on the scores.
 
 ## The selected prompt
 
-The experiments use `unformatted`. Its wording is in `prompts/unformatted.txt`.
+The experiments selected the `prompts/unformatted.txt`.
 
 The prompt was selected in two stages, each testing one question:
 
@@ -18,8 +16,6 @@ The prompt was selected in two stages, each testing one question:
 Each stage compares the current winner with one challenger on all 116 admissions for the three models, paired by admission. The stage reads the direction of F1 on ROUGE-L, SapBERT, scispaCy concept and MEDCON. For each model and metric, the F1 moved up when the challenger's mean was higher and more admissions went up than down, and down in the reverse case. The challenger advances when more of the 12 results moved up than down. A tie keeps the incumbent. `unformatted` won both stages. `scripts/analysis/run_comparison.py` in the `phd-dissertation-data-prep` repository computes the stages.
 
 ## What each variant tests
-
-A run uses one variant for every admission.
 
 ### `format-matched`: does the reference's format affect the scores?
 
