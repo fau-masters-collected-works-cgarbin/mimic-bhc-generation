@@ -150,7 +150,6 @@ class TestRealTemplates:
             ("unformatted", "narrative"),
             ("format-matched", "narrative"),
             ("format-matched", "domain_organized"),
-            ("enumerated", "narrative"),
             ("detailed", "narrative"),
         ],
     )

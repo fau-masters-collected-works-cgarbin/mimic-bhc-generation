@@ -58,8 +58,8 @@ class TestCliParameters:
             CliParameters(prompt="format-matched", **selections)
 
     def test_run_name_is_the_selection_and_prompt(self) -> None:
-        cli_parameters = CliParameters(prompt="enumerated", oracle_n=2)
-        assert cli_parameters.run_name == "oracle-n-2/enumerated-prompt"
+        cli_parameters = CliParameters(prompt="detailed", oracle_n=2)
+        assert cli_parameters.run_name == "oracle-n-2/detailed-prompt"
 
 
 class TestInferenceFor:

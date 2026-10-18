@@ -44,7 +44,7 @@ These explain specific design choices. Paths relative to `~/projects/phd-dissert
 - `CareVue MetaVision decision.md`: the MetaVision-only restriction.
 - `Cohort definition.md`: eligibility criteria for the admission pool.
 - `Sampling stratification.md`: the token strata, the tokenizer used for binning, and the per-stratum allocation targeting 132, which drew 116.
-- `Prompt variant evaluation.md`: the prompt variant comparison. The variants were renamed on 2026-10-12: `structured` is now `brief`, `minimal` is `unformatted`, and `complete` is `thorough`. They were renamed again on 2026-10-16: `brief` is now `format-matched` and `thorough` is now `enumerated`.
+- `Prompt variant evaluation.md`: the prompt variant comparison. The variants were renamed on 2026-10-12: `structured` is now `brief`, `minimal` is `unformatted`, and `complete` is `thorough`. `brief` was renamed `format-matched` on 2026-10-16. `thorough` was retired the same day.
 - `Prompt selection funnel.md`: the staged test of each prompt instruction, and the one prompt all three models use in the remaining experiments.
 - `Deduplication baseline decision.md`: sentence-level dedup adopted as the baseline.
 - `Oracle retriever design.md`: the best-possible-selection retriever that drives the retrieval gates.

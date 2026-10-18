@@ -154,7 +154,7 @@ class TestRunCliParameters:
         "cli_parameters",
         [
             CliParameters(model="gemma_4_e4b", prompt="format-matched", oracle_n=2),
-            CliParameters(model="gemma_4_e4b", prompt="enumerated", deduplication="none"),
+            CliParameters(model="gemma_4_e4b", prompt="detailed", deduplication="none"),
             CliParameters(model="qwen_3_5_4b", prompt="unformatted", smoke=True),
         ],
     )
