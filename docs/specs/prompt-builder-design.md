@@ -137,7 +137,11 @@ Reason: both sentences asked for a condensed summary, against `enumerated`'s req
 
 Expected effects, against `unformatted` on the same admissions: longer outputs in words, more problems described with their treatment and course, higher recall and lower precision on every metric, and more truncations, Llama most of all.
 
-Prompt test: pending.
+Prompt test: `detailed` only (commit `3d87cad`, 42 generations, no failures). Against the `enumerated` prompt test on the same admissions, every gate passed: truncations Gemma 0 / 0, Llama 1 / 0, Qwen 0 / 0; title echoes 0 / 0, 0 / 0, 1 / 2; standalone missing-information lines 0 / 0, 1 / 0, 0 / 0. Median generated words rose to 392.5, 334 and 435.5 (Gemma, Llama, Qwen), against 305.5, 294.5 and 342.5 under `enumerated` and 269, 298 and 334 under `unformatted`. The rewritten paragraphs released the length that `enumerated` held back.
+
+Full run: all 116 admissions for the three models (commit `3d87cad`, 348 generations, no failures). Against `unformatted`, all 12 selection F1s fell, so stage 2 of the prompt selection funnel kept `unformatted`. Outputs grew by a median of 48 to 78 words, concept recall moved by -0.010 to +0.008, and concept precision fell by about 0.02 on every model. Llama truncated 11 times, against 2 under `unformatted`. Gemma and Qwen never truncated. The 14 prompt test admissions reproduced exactly. `scripts/analysis/run_comparison.py` in `phd-dissertation-data-prep` produces these numbers. The funnel document has the table.
+
+Decision: `unformatted` stays the prompt of record. `detailed` and `enumerated` stay runnable as the stage 2 record.
 
 ### 2026-10-16: thoroughness without the format instruction
 
