@@ -17,7 +17,9 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 import completion as completion_script  # noqa: E402
 import cost as cost_script  # noqa: E402
 import length as length_script  # noqa: E402
+import output_checks as output_checks_script  # noqa: E402
 import quality as quality_script  # noqa: E402
+import sapbert_window as sapbert_window_script  # noqa: E402
 
 from bhc_experiment import metrics, reporting  # noqa: E402
 
@@ -182,3 +184,53 @@ class TestLengthSummaryGolden:
             }
         )
         assert_frame_equal(length_script.length_summary(lengths), expected, check_dtype=False)
+
+
+class TestOutputChecksGolden:
+    """A miscounted echo or missing-information line would read as a passed or failed gate."""
+
+    def test_title_echo_reads_the_first_nonblank_line_only(self) -> None:
+        assert output_checks_script.title_echo("\n**Brief Hospital Course:**\nThe patient...")
+        assert output_checks_script.title_echo("# Brief hospital course\nText")
+        assert not output_checks_script.title_echo(
+            "The patient...\nBrief Hospital Course: see above"
+        )
+
+    def test_missing_information_lines_count_short_lines_only(self) -> None:
+        text = (
+            "Disposition: not documented.\n"
+            "Follow-up plans were not specified\n"
+            "Oxygen needs were not documented in the final two days of the long stay.\n"
+            "Discharged home."
+        )
+        # The third line has 14 words, so it counts as inline phrasing.
+        assert output_checks_script.missing_information_lines(text) == 2
+
+    def test_header_lines_count_hash_and_bold_only_lines(self) -> None:
+        text = "# Sepsis:\nTreated.\n**Plan**\n**Sepsis**: treated with antibiotics.\n## AKI"
+        assert output_checks_script.header_lines(text) == 3
+
+
+class TestSapbertWindowGolden:
+    """A wrong share over the window would misstate how much of a text SapBERT never scores."""
+
+    def test_share_over_the_content_limit(self) -> None:
+        counts = pd.DataFrame(
+            {
+                "source": ["reference", "reference", "reference", "gemma", "gemma"],
+                "bhc_category": ["narrative"] * 5,
+                "wordpieces": [400, 510, 511, 300, 900],
+            }
+        )
+        expected = pd.DataFrame(
+            {
+                "source": ["gemma", "reference"],
+                "bhc_category": ["narrative", "narrative"],
+                "n": [2, 3],
+                "median_wordpieces": [600.0, 510.0],
+                "over_window": [1, 1],
+                "share_over_window": [0.5, 1 / 3],
+            }
+        )
+        result = sapbert_window_script.window_summary(counts)
+        assert_frame_equal(result, expected, check_dtype=False)

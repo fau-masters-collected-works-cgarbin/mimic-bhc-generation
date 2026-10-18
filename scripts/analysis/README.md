@@ -13,6 +13,8 @@ uv run python scripts/analysis/quality.py <run-folder>
 uv run python scripts/analysis/completion.py <run-folder>
 uv run python scripts/analysis/cost.py <run-folder>
 uv run python scripts/analysis/length.py <run-folder>
+uv run python scripts/analysis/output_checks.py <run-folder>
+uv run python scripts/analysis/sapbert_window.py <run-folder>
 ```
 
 | Script | Aspect | Report | Figures |
@@ -21,6 +23,8 @@ uv run python scripts/analysis/length.py <run-folder>
 | `completion.py` | Completion and non-termination | `completion.md` | `completion_rate.png`, `output_tokens.png` |
 | `cost.py` | Cost and latency | `cost.md` | `latency_vs_size.png`, `cost_quality_frontier.png` |
 | `length.py` | Output length against reference length | `length.md` | none |
+| `output_checks.py` | Title echoes, missing-information lines and header use, the prompt test gate counts | `output_checks.md` | none |
+| `sapbert_window.py` | Share of references and outputs longer than SapBERT's 510-wordpiece window | `sapbert_window.md` | none |
 
 Reports are stored in the run folder, figures in `<run-folder>/assets/`, referenced from the report by relative path. The scripts are independent. Run them in any order. A re-run rewrites only that script's own outputs.
 
