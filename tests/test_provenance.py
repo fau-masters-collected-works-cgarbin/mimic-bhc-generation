@@ -20,6 +20,8 @@ class TestReadLaunchRecord:
             "ubatch_size=2048\n"
             "model_file=google_gemma-4-E4B-it-Q4_K_M.gguf\n"
             "server_version=0.6.0\n"
+            "server_build=11429\n"
+            "server_commit=d81235049\n"
         )
         record = read_launch_record(tmp_path, "gemma-4-e4b")
         assert record == {
@@ -31,6 +33,8 @@ class TestReadLaunchRecord:
             "ubatch_size": "2048",
             "model_file": "google_gemma-4-E4B-it-Q4_K_M.gguf",
             "server_version": "0.6.0",
+            "server_build": "11429",
+            "server_commit": "d81235049",
         }
 
     def test_skips_blank_and_comment_and_malformed_lines(self, tmp_path):

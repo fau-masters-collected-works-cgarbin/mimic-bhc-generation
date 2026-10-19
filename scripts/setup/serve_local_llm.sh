@@ -85,10 +85,13 @@ LOG_FILE="$LOG_DIR/${ALIAS}-$(date +%Y-%m-%d-%H%M%S).log"
 # it remembers exactly how the server was launched, including flash attention,
 # which /props does not fully expose. Keep the filename in sync with
 # LAUNCH_RECORD_TEMPLATE in src/bhc_experiment/provenance.py.
-# --version prints "version: 0.6.0 (build 11429, commit ...)".
+# Record the version, build, and commit ID for reproducibility.
 VERSION_LINE="$("$LLAMA_SERVER" --version 2>&1 | grep -m1 'version:')"
-if [[ "$VERSION_LINE" =~ version:\ ([0-9.]+) ]]; then
+VERSION_PATTERN='version: ([0-9.]+)[^(]*\(build ([0-9]+), commit ([0-9a-f]+)\)'
+if [[ "$VERSION_LINE" =~ $VERSION_PATTERN ]]; then
   SERVER_VERSION="${BASH_REMATCH[1]}"
+  SERVER_BUILD="${BASH_REMATCH[2]}"
+  SERVER_COMMIT="${BASH_REMATCH[3]}"
 else
   echo "Could not read the version from: $VERSION_LINE" >&2
   exit 1
@@ -104,6 +107,8 @@ RECORD_FILE="$LOG_DIR/launch-record-${ALIAS}.txt"
   echo "cache_type_v=$CACHE_TYPE_V"
   echo "model_file=$MODEL_FILE"
   echo "server_version=$SERVER_VERSION"
+  echo "server_build=$SERVER_BUILD"
+  echo "server_commit=$SERVER_COMMIT"
   echo "launched_at=$(date +%Y-%m-%dT%H:%M:%S%z)"
 } > "$RECORD_FILE"
 
