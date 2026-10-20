@@ -20,7 +20,7 @@ When adding new output paths or file types, update `.gitignore` before generatin
 
 ## Experiment design
 
-The [README's Scope section](README.md#scope) has the run design, the strata, and what the experiments found. What it does not say, and what matters when planning code changes:
+The README's [Usage](README.md#usage) section has the runs and the results layout, and the notes under [Understanding the experiments](#understanding-the-experiments) have the design and the strata. What neither says, and what matters when planning code changes:
 
 - Cloud models are out of scope. All generation is local, via llama.cpp.
 - No retriever is built. Treat any doc that schedules a retrieval build as stale.
