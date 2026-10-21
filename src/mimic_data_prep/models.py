@@ -50,8 +50,7 @@ MODELS: tuple[Model, ...] = (
         hf_repo="google/gemma-4-E4B-it",
         gguf_file="google_gemma-4-E4B-it-Q4_K_M.gguf",
         # Off on the Apple GPU: faster prefill, the cohort's dominant cost, wins
-        # total wall time at 16K+ even though on is faster for Gemma decode. See
-        # "Local llama.cpp inference setup.md" in the writing vault.
+        # total wall time at 16K+ even though on is faster for Gemma decode.
         flash_attn=False,
         dry_sampler=False,
     ),

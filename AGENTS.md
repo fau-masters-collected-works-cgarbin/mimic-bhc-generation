@@ -20,36 +20,10 @@ When adding new output paths or file types, update `.gitignore` before generatin
 
 ## Experiment design
 
-The README's [Usage](README.md#usage) section has the runs and the results layout, and the notes under [Understanding the experiments](#understanding-the-experiments) have the design and the strata. What neither says, and what matters when planning code changes:
+The README's [Usage](README.md#usage) section has the runs, the strata, and the results layout. What it does not say, and what matters when planning code changes:
 
 - Cloud models are out of scope. All generation is local, via llama.cpp.
 - No retriever is built. Treat any doc that schedules a retrieval build as stale.
-- The contribution list was restated on 2026-07-22 and lives in section 1.3 of `dissertation paper.md` in the writing vault. Read it there. Do not copy it here. A copy goes stale.
-
-## Current task
-
-Project status lives in `dissertation execution plan.md` in the writing vault. Read its "Status" section before planning work.
-
-## Understanding the experiments
-
-Before planning code changes to the experiment pipeline, read these in order. Each anchor points at the section that owns the topic. All paths are relative to `~/projects/`.
-
-1. `phd-dissertation-writing/PhD dissertation - temporal EHR summary/Supporting material/Experiment design/Three-case experiment design.md`. The full spec: what each case answers, the feasibility working budget, the per-case mechanics, the data to collect, and the result-table schema. The cases test whether a feasibility-bounded slice of the record lets a small on-device model produce trustworthy Brief Hospital Courses from records too large to run in full on the device.
-2. `phd-dissertation-writing/PhD dissertation - temporal EHR summary/dissertation execution plan.md#Working budget framework`. Extended rationale for the feasibility budget (memory, latency, completion) and the deployment tiers, and why the no-degradation finding means quality does not set the budget. The operational definition lives in the full spec above.
-
-## Decision documents
-
-These explain specific design choices. Paths relative to `~/projects/phd-dissertation-writing/PhD dissertation - temporal EHR summary/Supporting material/Experiment design/`:
-
-- `CareVue MetaVision decision.md`: the MetaVision-only restriction.
-- `Cohort definition.md`: eligibility criteria for the admission pool.
-- `Sampling stratification.md`: the token strata, the tokenizer used for binning, and the per-stratum allocation targeting 132, which drew 116.
-- `Prompt variant evaluation.md`: the prompt variant comparison. The variants were renamed on 2026-10-12: `structured` is now `brief`, `minimal` is `unformatted`, and `complete` is `thorough`. `brief` was renamed `format-matched` on 2026-10-16. `thorough` was retired the same day.
-- `Prompt selection funnel.md`: the staged test of each prompt instruction, and the one prompt all three models use in the remaining experiments.
-- `Deduplication baseline decision.md`: sentence-level dedup adopted as the baseline.
-- `Oracle retriever design.md`: the best-possible-selection retriever that drives the retrieval gates.
-- `Retrieval decision protocol.md`: the retrieval gate protocol.
-- `Retrieval-ceiling gate result.md`: the retrieval-ceiling gate outcome.
 
 ## Architecture
 
@@ -131,7 +105,7 @@ Pre-commit hooks run lint, format, and the fast tests on commit. Pre-push runs t
 
 ## Search thoroughness
 
-- When asked to verify a change across files, use Grep/Glob exhaustively across the entire repo (code, tests, configs, docs, vault) BEFORE reporting results.
+- When asked to verify a change across files, use Grep/Glob exhaustively across the entire repo (code, tests, configs, docs) BEFORE reporting results.
 - Never answer 'all instances found' without running a broad search.
 
 ## Code style

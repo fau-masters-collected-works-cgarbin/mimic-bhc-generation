@@ -548,7 +548,7 @@ flowchart LR
 
 **`docs/`** has the setup instructions, the QuickUMLS setup, the cohort decision chain, and the design specs under `docs/specs/`.
 
-See [AGENTS.md](AGENTS.md) for code style conventions and the decision document paths.
+See [AGENTS.md](AGENTS.md) for code style conventions.
 
 ## Related repositories
 
@@ -566,7 +566,7 @@ This repository consumes outputs from sibling repositories but does not duplicat
 
 MIT ([LICENSE](LICENSE)). The license covers the code here. It grants nothing over MIMIC-III or the UMLS vocabularies, which carry their own agreements (see [Setup](#setup)).
 
-This repository contains no MIMIC data, down to patient identifiers. Cohorts, artifacts, and results live in [phd-dissertation-experiment-results](https://github.com/fau-masters-collected-works-cgarbin/phd-dissertation-experiment-results).
+This repository contains no MIMIC data, down to patient identifiers. Cohorts, artifacts, and results live in a separate repository, `phd-dissertation-experiment-results`, kept private under the PhysioNet DUA. The path constants in `src/mimic_data_prep/mimic.py` set where a reproducer keeps their own.
 
 ## AI Disclosure
 

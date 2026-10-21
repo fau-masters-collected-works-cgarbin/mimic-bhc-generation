@@ -13,7 +13,7 @@ The prompt was selected in two stages, each testing one question:
 - **Stage 1, format.** Does asking for the reference's format change the scores? `format-matched` against `unformatted`.
 - **Stage 2, detail.** Should the prompt guide the model toward a typical Brief Hospital Course, or tell it to list the documented details? `detailed` against `unformatted`.
 
-Each stage compares the current winner with one challenger on all 116 admissions for the three models, paired by admission. The stage reads the direction of F1 on ROUGE-L, SapBERT, scispaCy concept and MEDCON. For each model and metric, the F1 moved up when the challenger's mean was higher and more admissions went up than down, and down in the reverse case. The challenger advances when more of the 12 results moved up than down. A tie keeps the incumbent. `unformatted` won both stages. `scripts/analysis/run_comparison.py` in the `phd-dissertation-data-prep` repository computes the stages.
+Each stage compares the current winner with one challenger on all 116 admissions for the three models, paired by admission. The stage reads the direction of F1 on ROUGE-L, SapBERT, scispaCy concept and MEDCON. For each model and metric, the F1 moved up when the challenger's mean was higher and more admissions went up than down, and down in the reverse case. The challenger advances when more of the 12 results moved up than down. A tie keeps the incumbent. `unformatted` won both stages.
 
 SapBERT reads only the first 510 wordpieces of each text, so it scores less of a longer output. `scripts/analysis/sapbert_window.py` reports each run's share past that window. Under `detailed`, 44% to 72% of outputs ran past it, against 1% to 25% under `unformatted`, so SapBERT's three stage 2 votes partly reflect the window. Even without SapBERT, `detailed` loses: ROUGE-L, concept and MEDCON F1 also fell on all three models.
 
@@ -25,7 +25,7 @@ SapBERT reads only the first 510 wordpieces of each text, so it scores less of a
 
 - **The template resolves per admission.** The builder picks `prompts/format-matched_narrative.txt` or `prompts/format-matched_domain.txt` from the reference's format.
 - **Routing stops at narrative vs. domain-organized.** Finer routing fitted the prompt to the ground-truth structure and was nearing overfitting.
-- **One domain template serves every numbering convention.** Matching the prompt's delimiter to the ground truth had no measurable score effect. `docs/archive/prompt-format-delimiter-investigation.md` in the `phd-dissertation-data-prep` repository has the evidence.
+- **One domain template serves every numbering convention.** Matching the prompt's delimiter to the ground truth had no measurable score effect.
 
 Result: of the 12 F1 results, 3 moved up, 6 down and 3 not at all, every one by less than 0.01. ROUGE drops markup in tokenization and SapBERT ignores order, so format matching did not raise the scores.
 
@@ -81,7 +81,7 @@ Llama's truncations are repetition loops that repeat every 200 to 700 tokens, wh
 
 ## Prompt change log
 
-Each entry records one change to the prompt wording, or a set tested together, with its outcome, in the order tested. The commit of each tested change is in the prompt test run records, under `git_commit`. `scripts/analysis/prompt_versions.py` in the `phd-dissertation-data-prep` repository scores tests 1 to 3 on the prompt test admissions.
+Each entry records one change to the prompt wording, or a set tested together, with its outcome, in the order tested. The commit of each tested change is in the prompt test run records, under `git_commit`.
 
 ### Test 1: length target, physician role, no abbreviation instruction
 
