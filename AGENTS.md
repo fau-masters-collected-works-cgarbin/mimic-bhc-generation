@@ -24,7 +24,7 @@ The README's [Usage](README.md#usage) section has the runs and the results layou
 
 - Cloud models are out of scope. All generation is local, via llama.cpp.
 - No retriever is built. Treat any doc that schedules a retrieval build as stale.
-- The contribution list was restated on 2026-07-22 and lives in section 1.4 of `dissertation paper.md` in the writing vault. Read it there. Do not copy it here. A copy goes stale.
+- The contribution list was restated on 2026-07-22 and lives in section 1.3 of `dissertation paper.md` in the writing vault. Read it there. Do not copy it here. A copy goes stale.
 
 ## Current task
 
