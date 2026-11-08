@@ -775,3 +775,10 @@ class TestNoteOrder:
         assert [n.ROW_ID for n in notes] == [
             n.ROW_ID for n in sorted(notes, key=chronological_sort_key)
         ]
+
+
+class TestTableRef:
+    def test_all_varchar_reaches_the_reader(self) -> None:
+        path = mimic.MIMIC_DIR / "CPTEVENTS.csv.gz"
+        ref = mimic.table_ref("CPTEVENTS.csv.gz", all_varchar=True)
+        assert ref == f"read_csv_auto('{path}', all_varchar=true)"

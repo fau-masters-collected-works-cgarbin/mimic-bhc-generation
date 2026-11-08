@@ -36,9 +36,14 @@ PREPARED_DIR = _experiment_data_repo / "prepared"
 ARCHIVE_DIR = _experiment_data_repo / "archive"
 
 
-def table_ref(name: str) -> str:
-    """SQL fragment to read a MIMIC-III CSV.gz file directly with DuckDB."""
-    return f"read_csv_auto('{MIMIC_DIR / name}')"
+def table_ref(name: str, *, all_varchar: bool = False) -> str:
+    """SQL fragment to read a MIMIC-III CSV.gz file directly with DuckDB.
+
+    ``all_varchar`` reads every column as text and skips type inference. A failed
+    inference prints the offending row, MIMIC identifiers included.
+    """
+    options = ", all_varchar=true" if all_varchar else ""
+    return f"read_csv_auto('{MIMIC_DIR / name}'{options})"
 
 
 def bhc_ref() -> str:
