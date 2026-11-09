@@ -7,9 +7,6 @@ reports their cost, in sentences and in tokens, for each admission.
 Two duplication types are tracked: within-note (extra copies in a note
 that already has the sentence) and between-note (the first copy in
 each later note).
-
-See the dissertation doc "Deduplication methods" for the method and "Cohort
-precomputed metrics" for the field schema.
 """
 
 import logging

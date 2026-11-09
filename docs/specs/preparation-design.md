@@ -59,7 +59,6 @@ Generation (`run_experiment.py`) and scoring (`score_results.py`) read the prepa
 ## Related
 
 - README "Preparation" section: the operational commands and file-name scheme.
-- The dissertation: why sentence dedup is the baseline and whole-note is not adopted, and the input-coverage ceiling the raw-field extraction feeds.
 
 ## References
 

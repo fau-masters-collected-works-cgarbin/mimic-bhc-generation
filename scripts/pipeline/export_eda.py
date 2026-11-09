@@ -1,4 +1,4 @@
-"""Export EDA tables as markdown for dissertation write-up.
+"""Export EDA tables as markdown.
 
 Usage:
 

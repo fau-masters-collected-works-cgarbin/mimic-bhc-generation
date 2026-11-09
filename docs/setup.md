@@ -171,7 +171,7 @@ Launch the server with:
 scripts/setup/serve_local_llm.sh gemma_4_e4b # or qwen_3_5_4b, llama_3_2_3b
 ```
 
-The script kills any running llama-server first and sets the context window to 128K (131072 tokens). It reads the model's server alias, weights file, and flash-attention default from the model registry in `src/mimic_data_prep/models.py`, which follows the launch table in the inference setup doc linked at the bottom of this section. Stop with Ctrl+C, or `pkill -f llama-server`.
+The script kills any running llama-server first and sets the context window to 128K (131072 tokens). It reads the model's server alias, weights file, and flash-attention default from the model registry in `src/mimic_data_prep/models.py`. Stop with Ctrl+C, or `pkill -f llama-server`.
 
 Verify the server is up and generating responses:
 

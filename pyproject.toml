@@ -144,7 +144,7 @@ docstring-code-format = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src", "app", "scripts/pipeline", "scripts/decision_analysis", "scripts/setup"]
+pythonpath = ["src", "app", "scripts/pipeline", "scripts/setup"]
 markers = [
     "slow: marks tests requiring network or model download (deselect with '-m \"not slow\"')",
     "quickumls_index: marks tests requiring a licensed UMLS index and the sibling bridge environment; skipped where either is absent",

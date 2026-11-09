@@ -41,7 +41,7 @@ Because the stratum does not equal the processed token count after deduplication
 
 ## References
 
-Method anchors (Gabriel 2018, Lee 2022, Landi 2023) are listed in the Deduplication methods doc. The references below support this spec's literature-gap framing.
+The references below support this spec's literature-gap framing.
 
 - Landi et al. 2023. Clinical text deduplication practices for efficient pretraining and improved clinical tasks. arXiv:2312.09469.
 - Liu et al. 2022. "Note Bloat" impacts deep learning-based NLP models for clinical prediction tasks. Journal of Biomedical Informatics 133:104149.

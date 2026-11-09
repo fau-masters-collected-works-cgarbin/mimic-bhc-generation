@@ -63,8 +63,8 @@ docs/recall-investigation-plan.md
 # Git worktrees
 .worktrees/
 
-# Local llama.cpp binary and model GGUFs (populated by scripts/fetch_llama_and_models.sh)
+# Local llama.cpp binary and model GGUFs (populated by scripts/setup/fetch_llama_and_models.sh)
 local-llm/
 
-# llama-server logs (written by scripts/serve_local_llm.sh; preserve specific runs with `git add -f`)
+# llama-server logs (written by scripts/setup/serve_local_llm.sh)
 logs/

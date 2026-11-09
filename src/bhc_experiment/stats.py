@@ -27,9 +27,6 @@ understand the concepts and apply them correctly.
     Reading a CI that crosses zero: Altman and Bland 1995 and Greenland et al. 2016.
         https://pmc.ncbi.nlm.nih.gov/articles/PMC2550545/
         https://escholarship.org/uc/item/6sg3f506
-
-    The project-specific design choices and interpretation patterns are
-    documented in the dissertation.
 """
 
 from collections.abc import Iterable, Sequence
@@ -306,9 +303,6 @@ def paired_bootstrap_ci(
     out of the comparison. Resamples admissions with replacement (the
     bootstrap) to build the CI without assuming a normal distribution
     of deltas.
-
-    The full method, design choices, and interpretation patterns are
-    documented in the dissertation.
 
     Requires complete paired input: raises if ``metric`` has null values, or
     if an admission has a score on only one side of the contrast within a

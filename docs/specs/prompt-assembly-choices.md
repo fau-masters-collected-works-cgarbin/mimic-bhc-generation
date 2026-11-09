@@ -1,6 +1,6 @@
 # Prompt assembly: the context-window overflow margin
 
-What the assembler does (event sources and sort key) is in `src/bhc_experiment/prompt_builder.py` and `src/bhc_experiment/loader.py`. The assembly decisions and their literature alignment are documented in the dissertation. This file records how much headroom the 112K pool filter actually leaves.
+What the assembler does (event sources and sort key) is in `src/bhc_experiment/prompt_builder.py` and `src/bhc_experiment/loader.py`. This file records how much headroom the 112K pool filter actually leaves.
 
 ## Context-window overflow
 

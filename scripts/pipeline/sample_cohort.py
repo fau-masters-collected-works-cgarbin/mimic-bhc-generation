@@ -15,7 +15,6 @@ Input: cohorts/filtered_pool.json (built by build_filtered_pool.py with the
 Output: cohorts/experiment_cohort.json
 
 See docs/specs/experiment-cohort-sampling-design.md for the full spec.
-The rationale behind the stratification is documented in the dissertation.
 """
 
 import argparse
@@ -41,9 +40,8 @@ from mimic_data_prep.sampling import (
 SEED = 4
 
 # Asymmetric per-stratum allocation. Smaller per-stratum N at long context
-# reflects the quadratic cost of prefill at 96K-112K. The allocation rationale,
-# the per-stratum compute budget, and the total n=132 are documented in the
-# dissertation. The 4K stratum is structurally underflowing in the pool.
+# reflects the quadratic cost of prefill at 96K-112K. The 4K stratum is
+# structurally underflowing in the pool.
 SAMPLES_PER_STRATUM: dict[str, int] = {
     "4K": 25,
     "8K": 25,

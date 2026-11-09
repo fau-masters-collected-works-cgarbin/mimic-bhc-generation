@@ -12,7 +12,7 @@ from mimic_data_prep.sampling import TOKEN_STRATA  # noqa: E402
 
 
 def test_samples_per_stratum_matches_allocation_contract() -> None:
-    """SAMPLES_PER_STRATUM matches the allocation contract the dissertation documents.
+    """SAMPLES_PER_STRATUM matches the allocation contract.
 
     Three properties together form the contract: the dict covers every
     assigned stratum, every value is a positive int, and the sum

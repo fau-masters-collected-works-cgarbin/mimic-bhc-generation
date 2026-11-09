@@ -46,15 +46,14 @@ from mimic_data_prep.mimic import COHORTS_DIR
 from mimic_data_prep.sampling import TOKEN_STRATA, assign_token_stratum
 
 # 30% representation floor for major covariate levels, a QA threshold
-# not a derived minimum. The audit procedure is documented in the dissertation.
+# not a derived minimum.
 COVARIATE_FLOOR = 0.30
 
 # Margin on the pool threshold for the structural-vs-sampling split. A
 # pool share within this margin of the floor is too close for a
 # different seed to robustly clear it: at per-stratum n of 15-25
 # admissions, a pool at floor + 5pp yields draws that clear the floor
-# only ~50-70% of the time. The stratification specification is documented
-# in the dissertation.
+# only ~50-70% of the time.
 RESAMPLE_MARGIN = 0.05
 
 # Covariates checked against the floor, listing only the levels common enough

@@ -31,7 +31,7 @@ from mimic_data_prep.mimic import RESULTS_DIR
 st.set_page_config(page_title="Experiment EDA", layout="wide")
 
 # Metrics charted by default, in this order. Concept F1 leads because the
-# dissertation claims rest on it, the QuickUMLS reference implementation
+# study's claims rest on it, the QuickUMLS reference implementation
 # follows as the literature-units check, and the embedding metric corroborates.
 _DEFAULT_CHART_METRICS: tuple[str, ...] = (
     SCISPACY_CLINICAL_F1,

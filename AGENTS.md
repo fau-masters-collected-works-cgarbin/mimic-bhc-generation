@@ -40,7 +40,7 @@ Guidelines for working with sibling repos:
 
 ### MIMIC schema reference
 
-**Read [`mimic-admission-explorer/docs/mimic_schema_reference.md`](../mimic-admission-explorer/docs/mimic_schema_reference.md) before writing any version-aware SQL.** It has verified column names, version differences, and join patterns. Do not derive schema at runtime when the information is already in the reference.
+**Read [`mimic-explorer/docs/mimic_schema_reference.md`](https://github.com/fau-masters-collected-works-cgarbin/mimic-explorer/blob/main/docs/mimic_schema_reference.md) before writing any version-aware SQL.** It has verified column names, version differences, and join patterns. Do not derive schema at runtime when the information is already in the reference.
 
 ### MIMIC-III data location
 

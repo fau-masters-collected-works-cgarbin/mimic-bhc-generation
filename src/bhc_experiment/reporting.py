@@ -38,7 +38,7 @@ FONT_FAMILY = ["Arial", "Helvetica", "DejaVu Sans"]
 plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["font.sans-serif"] = FONT_FAMILY
 
-# Okabe-Ito, colorblind-safe, ordered alphabetically by display name, the order Chapter 5's
+# Okabe-Ito, colorblind-safe, ordered alphabetically by display name, the order the result
 # tables use. Shared so a model reads the same color in every figure that draws models
 # individually.
 _MODEL_COLORS = {"gemma_4_e4b": "#0072B2", "llama_3_2_3b": "#D55E00", "qwen_3_5_4b": "#009E73"}

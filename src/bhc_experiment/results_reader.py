@@ -34,7 +34,7 @@ from mimic_data_prep.cohort import Cohort, load_cohort
 from mimic_data_prep.mimic import COHORTS_DIR, PREPARED_DIR
 
 # Metrics whose max-z composite ranks the outlier worklist. The three primary
-# dissertation metrics: lexical (ROUGE-L), embedding (SapBERT), and clinical
+# metrics: lexical (ROUGE-L), embedding (SapBERT), and clinical
 # concept (SciSpaCy) F1.
 PRIMARY_METRICS: tuple[str, ...] = (ROUGEL_F1, SAPBERT_F1, SCISPACY_CLINICAL_F1)
 

@@ -95,8 +95,8 @@ def _classify_radiology(text_lower: str) -> str | None:
     FINAL REPORT wins over any embedded PFI markers, since it makes the
     document type final regardless of the PFI text it quotes.
 
-    The marker set and the "FINAL REPORT trumps PFI" rule come from the
-    empirical analysis in ``scripts/decision_analysis/radiology_pfi_final_detection.py``.
+    The marker set and the "FINAL REPORT trumps PFI" rule come from an
+    empirical analysis of MIMIC-III radiology reports.
     """
     if _FINAL_MARKER in text_lower:
         return "final"

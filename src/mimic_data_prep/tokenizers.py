@@ -1,7 +1,7 @@
 """Hugging Face tokenizers for the target models.
 
 The pool stores per-model counts so the cost-efficiency analysis does not
-depend on a single proxy tokenizer. The rationale is documented in the dissertation.
+depend on a single proxy tokenizer.
 
 Tokenizer downloads need the setup in docs/setup.md.
 """

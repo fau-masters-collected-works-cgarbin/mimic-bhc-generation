@@ -126,8 +126,6 @@ MEDCON_DEFAULT_TUIS: tuple[str, ...] = (
 # means something else in a hospital course.
 # Dropping these keeps the MEDCON reference set and the oracle ceiling from
 # crediting phantom concepts.
-# To re-derive the candidates behind this list, for example after a cohort change,
-# run scripts/decision_analysis/medcon_linking_misfires.py.
 LINKING_ARTIFACT_CUIS: frozenset[str] = frozenset(
     {
         "C0032207",  # "Pt"/"PT" (patient / prothrombin time) -> platinum, the element

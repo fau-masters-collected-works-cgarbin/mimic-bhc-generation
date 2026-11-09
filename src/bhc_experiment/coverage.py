@@ -4,8 +4,7 @@ The ceiling is the share of reference concepts present in the assembled model
 input. It bounds achievable concept recall for almost every admission, but it
 is not a hard limit: a model can still produce a concept the extractor did not
 find in the input, by inference or by wording that links where the raw input
-did not. Recall reads above the ceiling for some admissions, counted by
-scripts/decision_analysis/recall_above_ceiling.py.
+did not. Recall reads above the ceiling for some admissions.
 
 Holds the set formulas over CUI sets for the ceiling, for the concept
 precision, recall, and F1 that the MEDCON metric reports, and for the

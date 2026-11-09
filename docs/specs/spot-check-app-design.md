@@ -19,7 +19,7 @@ The extraction pipeline parses narrative and domain-organized BHCs through diffe
 
 ## Scope decisions
 
-Token-count anomalies go in the free-text notes. Each added checkbox changes what a saved review means, so the checkbox set stays scoped to ground-truth quality and source-record sparsity, per the dissertation's audit procedure.
+Token-count anomalies go in the free-text notes. Each added checkbox changes what a saved review means, so the checkbox set stays scoped to ground-truth quality and source-record sparsity.
 
 The grid shows every note, including error notes and pre-admission notes, each one flagged, because the reviewer needs the full database state to debug an oddity. The coverage summary line and the checkboxes exclude those notes from their counts.
 

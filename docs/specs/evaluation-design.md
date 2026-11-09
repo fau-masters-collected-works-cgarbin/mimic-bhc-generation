@@ -1,7 +1,5 @@
 # Evaluation Design
 
-Metric adoption decisions (what we compute, why, what is deferred) are documented in the dissertation, along with what the input-coverage ceiling measures and why.
-
 This spec covers the architecture: the modules that turn a generated summary into scores, how they depend on each other, and the contracts between them. It ends at `eval_results.jsonl`. Reading those scores back into tables and figures is results analysis, covered by the README's [Results analysis](../../README.md#results-analysis) section.
 
 ## The layers
@@ -65,7 +63,7 @@ BERTScore and MEDCON have a fixed startup cost per call, so scoring a run in one
 
 ## Score keys are a cross-module contract
 
-A metric's name is what appears in every table and figure built from the scores, because `results_reader.py` passes score keys through unchanged. Renaming a metric renames a column in the dissertation's tables.
+A metric's name is what appears in every table and figure built from the scores, because `results_reader.py` passes score keys through unchanged. Renaming a metric renames a column in those tables.
 
 Keys take the form `{name}/{submetric}`. `name` is the metric entry's `name`, or the concept space's `name` for the concept metric. `submetric` is fixed by the metric implementation. A misspelled key does not raise. It selects nothing, so the column comes back all-NaN. `metrics.py` defines every key as a named constant for that reason.
 
@@ -90,9 +88,8 @@ The ceiling reads the same frozen prepared-input and concept artifacts that gene
 
 ## Not owned by this spec
 
-- **Which metrics to compute, and why.** Documented in the dissertation.
 - **The `eval_results.jsonl` layout and the model directory it sits in.** `results-storage-design.md`.
 - **The prepared-input and concept artifacts the scorer reads, with their fingerprints.** `preparation-design.md`.
 - **Commands.** The README's [Scoring](../../README.md#scoring) section has every invocation.
 - **Why QuickUMLS runs in a subprocess.** `../quickumls-setup.md`.
-- **Faithfulness.** No faithfulness instrument runs. `config.METRICS` has no faithfulness metric. Faithfulness is bounded by the unsupported share of the generated-concept partition, which `coverage.partition_generated` computes and `generated_concept_partition.py` reports. The dissertation names an LLM-as-judge design as the path that would close the gap, deferred to future work.
+- **Faithfulness.** No faithfulness instrument runs. `config.METRICS` has no faithfulness metric. Faithfulness is bounded by the unsupported share of the generated-concept partition, which `coverage.partition_generated` computes.

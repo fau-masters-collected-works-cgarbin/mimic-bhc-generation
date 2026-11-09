@@ -1,4 +1,4 @@
-"""Aggregation helpers for experiment EDA and dissertation table exports.
+"""Aggregation helpers for experiment EDA and markdown table exports.
 
 Scope: pure functions over a per-admission DataFrame. Series label composition,
 metric column detection, per-series aggregates.

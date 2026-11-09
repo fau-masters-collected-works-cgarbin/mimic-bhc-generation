@@ -305,8 +305,8 @@ def _classify_generated(text: str) -> StructureResult | None:
 def _structure_mismatch(ref_attrs: dict, gen_structure: StructureResult | None) -> bool:
     """Return True if generated structure differs from reference metadata.
 
-    Numbering convention is excluded: see
-    docs/archive/prompt-format-delimiter-investigation.md.
+    Numbering convention (hash or numbered headers) is excluded, since matching
+    it in the prompt did not change the scores.
     """
     if gen_structure is None:
         return False

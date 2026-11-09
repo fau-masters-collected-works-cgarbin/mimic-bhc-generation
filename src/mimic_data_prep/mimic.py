@@ -32,7 +32,7 @@ CONCEPTS_DIR = _experiment_data_repo / "concepts"
 # file per cohort/dedup combination.
 PREPARED_DIR = _experiment_data_repo / "prepared"
 # Retired runs, moved out of RESULTS_DIR. Split into obsolete/ (superseded
-# earlier versions) and one-off/ (narrow probes). See the results repo AGENTS.md.
+# earlier versions) and one-off/ (narrow probes).
 ARCHIVE_DIR = _experiment_data_repo / "archive"
 
 
@@ -246,8 +246,8 @@ def create_eligible_pool(conn: duckdb.DuckDBPyConnection) -> int:
                b.bhc_text AS bhc_text
         FROM {bhc_ref()} b
         -- JOIN (not LEFT JOIN): only keep admissions that have an ICU stay
-        -- in MetaVision. Admissions without ICU stays are out of scope
-        -- (see ICU-only scoping in the CareVue/MetaVision decision doc).
+        -- in MetaVision. Admissions without ICU stays are out of scope, since
+        -- MIMIC-III records the charting system with each ICU stay.
         JOIN icustay_admissions i ON b.hadm_id = i.HADM_ID
         -- BHC quality filters (carried forward from the extraction pipeline):
         WHERE b.extraction_success           -- recognizable BHC header pattern found

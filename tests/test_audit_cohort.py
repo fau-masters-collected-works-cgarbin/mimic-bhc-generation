@@ -338,7 +338,7 @@ class TestStatusReport:
 class TestStructuralVsSampling:
     """Floor violations are labeled by whether the pool itself clears the floor.
 
-    Mirrors the audit-procedure classification documented in the dissertation:
+    Mirrors the audit procedure's classification:
     structural violations cannot be fixed by resampling (the pool is also below
     the floor), sampling violations might be (the pool clears it, the draw
     missed).

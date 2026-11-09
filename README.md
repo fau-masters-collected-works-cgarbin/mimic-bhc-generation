@@ -6,7 +6,7 @@ This project uses small open-weight models (Gemma 4 E4B, Qwen3.5-4B, and Llama 3
 
 ## Setup
 
-See [docs/setup.md](docs/setup.md).
+See [docs/setup.md](docs/setup.md). The setup was tested only on an Apple Silicon Mac: the llama.cpp download and the locked `nmslib` wheel are macOS builds.
 
 ## Usage
 
@@ -18,7 +18,7 @@ Verify the external data dependencies exist to prevent hard-to-debug failures la
 
 ```bash
 ls ../mimic-iii/physionet.org/files/mimiciii/1.4/ADMISSIONS.csv.gz
-ls ../phd-dissertation-experiment-results/cohorts/
+ls -d ../phd-dissertation-experiment-results/
 ```
 
 Follow the steps to extract the BHC data in ../mimic-bhc-extraction/README.md, then verify the output:
@@ -369,7 +369,7 @@ Every score-derived number in the results chapter is arithmetic over two files t
 
 The concept artifact has the CUI sets, for the quantities that work on concept sets.
 
-`src/bhc_experiment/coverage.py` has the set formulas. [docs/specs/evaluation-design.md](docs/specs/evaluation-design.md) defines the score-key contract. The dissertation's methodology chapter documents the metric configuration and how the confidence intervals were computed.
+`src/bhc_experiment/coverage.py` has the set formulas. [docs/specs/evaluation-design.md](docs/specs/evaluation-design.md) defines the score-key contract.
 
 #### Outlier review
 
@@ -393,7 +393,7 @@ uv run streamlit run app/results_app.py
 uv run streamlit run app/results_eda.py
 ```
 
-For dissertation markdown tables from the same aggregates, use the CLI:
+For markdown tables from the same aggregates, use the CLI:
 
 ```bash
 uv run python scripts/pipeline/export_eda.py summary "$RUN" \
@@ -439,7 +439,7 @@ The funnel narrows MIMIC-III's 58,976 hospital admissions down to the sampled co
 | + eligibility filters | `build_filtered_pool.py` | `cohorts/filtered_pool.json` | 15,525 before token budget (LOS >= 3, charting days >= 3, BHC <= 15,000, safety nets) |
 | + 112K pool budget | `build_filtered_pool.py` | `cohorts/filtered_pool.json` | empirical (max-of-three pivot tokenizer count <= 112K, recorded in the manifest) |
 | + stratified sampling | `sample_cohort.py` | `cohorts/experiment_cohort.json` | 116 drawn against an asymmetric per-stratum target of 132 across seven token-size strata (4K/8K/16K = 25 each, 32K = 20, 64K = 15, 96K = 12, 112K = 10), seed=4. Only 4K fell short, at 9 of 25 |
-| + audit | `audit_cohort.py` | stdout | per-stratum covariate balance and a single PASS/RESAMPLE verdict line that names affected cells. Branch selection on a PASS with structural breaches is a human judgment per `Sampling stratification.md` |
+| + audit | `audit_cohort.py` | stdout | per-stratum covariate balance and a single PASS/RESAMPLE verdict line that names affected cells. Branch selection on a PASS with structural breaches is a human judgment |
 
 **`src/mimic_data_prep/`** reads MIMIC and builds the cohort. `mimic.py` defines the path constants and the SQL filtering funnel. `cohort.py` loads the filtered pool as a DataFrame and reads cohort JSON into typed objects. `sampling.py` has the stratified sampler and the cohort-file writers. Scripts and the apps import from here instead of defining their own paths or cohort logic.
 
@@ -518,11 +518,11 @@ The prompt builder supports the `unformatted`, `format-matched`, and `detailed` 
 
 **`src/bhc_experiment/results_reader.py`** is the shared read-path for experiment results. Score keys are whatever the metric entry named them, in the form `{name}/{submetric}` (`sapbert/f1`, `rouge1/f1`), and the reader passes them through unchanged.
 
-**`src/bhc_experiment/analysis.py`** aggregates those per-admission rows for display. The EDA page and the export CLI both call it, so labels and aggregates cannot drift between interactive exploration and dissertation export.
+**`src/bhc_experiment/analysis.py`** aggregates those per-admission rows for display. The EDA page and the export CLI both call it, so labels and aggregates cannot drift between interactive exploration and the markdown export.
 
-**`src/bhc_experiment/reporting.py`** backs the `scripts/analysis/` reports: resolving a run onto the cohort strata, per-stratum bootstrap confidence intervals, table formatting, and figure saving. Decision-analysis scripts read runs through it too.
+**`src/bhc_experiment/reporting.py`** backs the `scripts/analysis/` reports: resolving a run onto the cohort strata, per-stratum bootstrap confidence intervals, table formatting, and figure saving.
 
-**`scripts/pipeline/summarize_runs.py`** produces comparison tables across the models of one run (mean scores, token counts, latency). **`scripts/pipeline/export_eda.py`** exports the same aggregates as dissertation-bound markdown tables.
+**`scripts/pipeline/summarize_runs.py`** produces comparison tables across the models of one run (mean scores, token counts, latency). **`scripts/pipeline/export_eda.py`** exports the same aggregates as markdown tables.
 
 **`app/`** has the Streamlit viewers, each launched from its Usage step above. The per-admission viewer spans two modules: `results_app.py` selects a model's directory, `results_explorer.py` renders it.
 
@@ -546,7 +546,7 @@ flowchart LR
 
 **`tests/`** has unit tests using synthetic CSV.gz fixtures with DuckDB.
 
-**`docs/`** has the setup instructions, the QuickUMLS setup, the cohort decision chain, and the design specs under `docs/specs/`.
+**`docs/`** has the setup instructions, the QuickUMLS setup, and the design specs under `docs/specs/`.
 
 See [AGENTS.md](AGENTS.md) for code style conventions.
 
@@ -556,9 +556,7 @@ This repository consumes outputs from sibling repositories but does not duplicat
 
 [**mimic-bhc-extraction**](https://github.com/fau-masters-collected-works-cgarbin/mimic-bhc-extraction) provides BHC extraction and the shared data access layer (DuckDB loading, column mapping, format detection). This repo consumes the extracted BHC text as ground truth and follows the extraction repo's patterns for loading MIMIC CSV.gz files and testing.
 
-**mimic-admission-explorer** extends those data access patterns into a broader query framework with reusable SQL patterns for cohort profiling.
-
-**mimic-explorer** provides pre-computed statistics, timeline queries, and the MIMIC schema reference.
+[**mimic-explorer**](https://github.com/fau-masters-collected-works-cgarbin/mimic-explorer) provides pre-computed statistics, timeline queries, and the MIMIC schema reference.
 
 **phd-dissertation-experiment-results** stores all MIMIC-derived data: cohort definitions, the prepared-input and concept artifacts (`PREPARED_DIR`, `CONCEPTS_DIR`), experiment results, and spot-check reviews. Separated from this code repo for DUA compliance. It stays local because it contains MIMIC-derived data.
 

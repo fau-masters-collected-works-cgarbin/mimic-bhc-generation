@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Launch llama-server on the Apple GPU for one of the three dissertation
+# Launch llama-server on the Apple GPU for one of the three experiment
 # models. Kills any running llama-server first so only one model is up at a time.
-# All three models run at the dissertation context window of 128K (131072 tokens).
+# All three models run at the experiment context window of 128K (131072 tokens).
 #
 # Usage:
 #   scripts/setup/serve_local_llm.sh <model key> [flashattn-on|flashattn-off]

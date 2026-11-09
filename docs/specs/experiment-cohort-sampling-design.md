@@ -2,10 +2,6 @@
 
 The stratification variable, the seven strata and their bin convention, the max-of-three binning rule, the asymmetric per-stratum allocation, the seed, the covariate list, and the audit's floor and verdict logic are all documented at their definitions in `sample_cohort.py`, `sampling.py`, and `audit_cohort.py`. This spec records only what those files cannot say from where they sit.
 
-## Source documents
-
-Two specifications own this design and the dissertation reports both. The stratification specification owns the layered structure, seven strata, max-of-three rule, and the 112K pool filter. The sampling specification owns covariate handling and the four-rule audit procedure.
-
 ## Where 112K comes from
 
 128K is the binding context window, set by Llama 3.2 3B and Gemma 4 E4B. Qwen3.5-4B is 262K and is not the binding constraint. The pool filter sits at 112K, 87.5% of 128K, leaving a nominal ~16K for the prompt template, the demographics prefix, and the generation budget.
@@ -26,7 +22,7 @@ The cohort needs to be rebuilt when:
 
 - A model with a smaller binding context window joins the pivot set, since the 112K headroom is tied to 128K.
 - Per-model tokenizer versions move and the count differences exceed the headroom.
-- The eligibility filters in `Cohort definition.md` change.
+- The eligibility filters in `mimic.py` change.
 - The seven-stratum definition or the binning rule changes.
 
 A rebuild draws a fresh stratified sample from the new pool. It does not patch the previous cohort.
