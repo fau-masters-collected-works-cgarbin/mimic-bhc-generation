@@ -122,9 +122,10 @@ def _apply_sentence(
     stay. Every note is kept, with only its TEXT rewritten. It also returns
     the cut sentences, read from each note before its TEXT is rewritten.
 
-    When every sentence in a note is a duplicate, excision leaves only its
-    inter-sentence whitespace. We keep even those whitespace-only notes so the
-    admission timeline still records that a note occurred at that point.
+    A sentence's span can include the line breaks and spaces next to it, so a
+    note whose every sentence is a duplicate can come out empty or
+    whitespace-only. We keep even those notes so the admission timeline still
+    records that a note occurred at that point.
     """
     rows = classify_admission_sentences([_to_detector_dict(n) for n in eligible_notes], segment_fn)
     trimmed: dict[int, str] = {}

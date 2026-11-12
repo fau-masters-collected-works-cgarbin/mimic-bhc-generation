@@ -150,8 +150,9 @@ def chronological_sort_key(record: NoteEvent | LabEvent | Prescription) -> tuple
     record's MIMIC ROW_ID, which makes the order deterministic within each
     type (a lab panel drawn at one CHARTTIME, or same-day prescriptions,
     would otherwise tie and keep arbitrary input order). ROW_ID is
-    table-scoped, so a lab and a note at the same second could still tie,
-    but same-second cross-type ties are vanishingly rare in the BHC use case.
+    table-scoped, so records of different types at the same time order by
+    unrelated ROW_IDs. Date-only notes and prescriptions both sit at noon, so
+    this happens whenever the two share a day.
     """
     if isinstance(record, LabEvent):
         return (record.CHARTTIME or f"{_NO_TIMESTAMP_SENTINEL_DATE} 12:00:00", record.ROW_ID)

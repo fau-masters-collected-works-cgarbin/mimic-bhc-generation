@@ -8,7 +8,7 @@ How each method works and its tuning, the detection rules, and excision mechanic
 
 ## Design decisions
 
-**The surviving copy is the chronologically earliest one.** A deduplicated fact keeps the timestamp of the note that first recorded it. Keeping a later copy would move the event forward in the patient's history, which concept-overlap metrics cannot detect, so the error would pass every automated check.
+**The surviving copy is the first one in charting order.** `note_order_sql` in `mimic.py` defines the order. A deduplicated fact keeps the timestamp of the first copy in that order. Keeping a later copy would move the event forward in the patient's history, which concept-overlap metrics cannot detect, so the error would pass every automated check.
 
 **Stratum is a frozen covariate, never recomputed.** Dedup can move an admission across a token boundary. The stratum is assigned once at cohort construction from the pre-dedup `max_total_tokens` and read by every later step, so the comparison stays paired and by-stratum reporting is stable. Token reduction is reported as an outcome. The bins stay fixed.
 
@@ -36,7 +36,7 @@ Because the stratum does not equal the processed token count after deduplication
 
 ## Not doing
 
-- No within-only or between-only sentence conditions. `sentence` removes both passes, and splitting them is deferred until the combined result warrants it.
+- No within-only or between-only sentence conditions. `sentence` removes both kinds of copy. Splitting them is deferred until the combined result warrants it.
 - No peak-memory instrumentation. Per-run memory footprint is a separate measurement task.
 
 ## References
