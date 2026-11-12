@@ -84,7 +84,7 @@ Two functions compute it:
 
 The admission-level function sits in `oracle.py` because it reuses the oracle's record attribution, which is what makes its candidate records match what an all-records run fed the model.
 
-The ceiling reads the same frozen prepared-input and concept artifacts that generation reads, so the input the model saw and the input the ceiling measures are the same records by construction. `preparation-design.md` explains why.
+The ceiling reads the same frozen prepared-input artifact that generation reads, with the concept artifact extracted over it, so the input the model saw and the input the ceiling measures are the same records by construction. `preparation-design.md` explains why.
 
 ## Not owned by this spec
 

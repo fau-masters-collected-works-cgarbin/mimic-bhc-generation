@@ -141,7 +141,7 @@ def create_model_dir_and_record(  # noqa: PLR0913
     """Create the model directory and write its initial run record.
 
     ``prepared_commit`` is the commit the inputs were prepared at, so scoring can
-    refuse a run whose inputs were prepared again since. ``inputs`` names the
+    refuse a run whose inputs were prepared at another commit. ``inputs`` names the
     files the run read. ``runtime_environment`` is what the server reported
     about itself.
     """

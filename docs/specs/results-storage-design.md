@@ -30,7 +30,7 @@ To rerun a model, delete its directory. The results repo's git history keeps rep
 
 **Scoring replaces the eval file.** Every run is scored with the same metrics, so a scoring pass owns the whole `eval_results.jsonl`. What scored it goes once into `eval_record.yaml`.
 
-**A run records the commit its inputs were prepared at.** Preparation writes its commit to the prepared-input `.meta.json`, and generation copies it into the run record as `prepared_commit`. Scoring refuses a run whose inputs were prepared again since, because its generations and the ceiling would then describe different records. For the same reason, scoring rebuilds each admission's prompt and refuses a run whose stored prompt no longer matches.
+**A run records the commit its inputs were prepared at.** Preparation writes its commit to the prepared-input `.meta.json`, and generation copies it into the run record as `prepared_commit`. Scoring refuses a run whose inputs were prepared at another commit, because its generations and the ceiling would then describe different records. For the same reason, scoring rebuilds each successfully generated admission's prompt and refuses a run whose stored prompt no longer matches.
 
 ## Resume semantics
 
