@@ -434,7 +434,8 @@ The funnel narrows MIMIC-III's 58,976 hospital admissions down to the sampled co
 | Stage | Script | Output | Admissions |
 | --- | --- | --- | --- |
 | MIMIC-III hospital admissions | | | 58,976 |
-| MIMIC-III ICU admissions | | | 22,046 (MetaVision-only, CareVue excluded) |
+| MIMIC-III admissions with an ICU stay | | | 57,786 |
+| MetaVision ICU admissions | | | 22,046 (CareVue excluded) |
 | + valid BHC extraction | | | 21,402 (extraction success, >= 100 chars, no ISERROR) |
 | + eligibility filters | `build_filtered_pool.py` | `cohorts/filtered_pool.json` | 15,525 before token budget (LOS >= 3, charting days >= 3, BHC <= 15,000, safety nets) |
 | + 112K pool budget | `build_filtered_pool.py` | `cohorts/filtered_pool.json` | empirical (max-of-three pivot tokenizer count <= 112K, recorded in the manifest) |

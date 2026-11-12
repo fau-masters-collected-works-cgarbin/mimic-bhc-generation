@@ -4,7 +4,7 @@ The stratification variable, the seven strata and their bin convention, the max-
 
 ## Where 112K comes from
 
-128K is the binding context window, set by Llama 3.2 3B and Gemma 4 E4B. Qwen3.5-4B is 262K and is not the binding constraint. The pool filter sits at 112K, 87.5% of 128K, leaving a nominal ~16K for the prompt template, the demographics prefix, and the generation budget.
+128K is the binding context window, set by Llama 3.2 3B and Gemma 4 E4B. Qwen3.5-4B is 262K nominal and is not the binding constraint. Every model is served at 131,072 tokens (`CTX_SIZE` in `scripts/setup/serve_local_llm.sh`). The pool filter sits at 112,000, 87.5% of a nominal 128,000, leaving about 19K of the served window for the prompt template, the demographics prefix, and the generation budget.
 
 That reserve is not a fixed cost. Serialization wraps every record in decoration the filter never counted. The overhead scales with the record count, mostly labs. `prompt-assembly-choices.md` has the measured gap on a lab-dense admission. Treat the fit as a soft guarantee, and read that file before relaxing the filter.
 

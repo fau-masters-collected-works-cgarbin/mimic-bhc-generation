@@ -267,7 +267,7 @@ def create_filtered_pool(conn: duckdb.DuckDBPyConnection) -> int:
     2. Distinct charting days >= 3 (documentation spread over time, so one burst of
        charting on a single day does not qualify)
     3. BHC <= 15,000 chars (outlier removal)
-    4. Non-DS notes >= 2 and labs >= 10 (safety nets that filter 3 and 4 already cover)
+    4. Non-DS notes >= 2 and labs >= 10 (safety nets)
 
     Creates: temp tables ``icustay_admissions``, ``eligible_pool``, and
     ``filtered_pool`` with everything from ``eligible_pool`` plus enrichment
