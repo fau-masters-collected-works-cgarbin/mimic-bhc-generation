@@ -343,7 +343,7 @@ The Streamlit viewers and `export_eda.py` in step 5 read the same `eval_results.
 
 ##### Concept coverage
 
-Concept coverage decomposes in both directions, separating the structural ceiling from model capability.
+Concept coverage decomposes in both directions, separating the limit of the task from the limit of the models.
 
 Take eight labeled concepts spread across the three sets:
 
@@ -359,7 +359,7 @@ Take eight labeled concepts spread across the three sets:
 | Capture | C5 generated, over C3, C4, C5 that the input supplied | 0.33 |
 | Unsupported share | C8 generated, over the four generated | 0.25 |
 
-C2 and C1 are what pull the values apart. C2 is in the reference and nowhere else, so it lowers the ceiling and no model can recover it. C1 is in the reference and the generation but not the input, so utilization counts it and capture does not. On the generated side, the four concepts cover every combination of input and reference: C5 is in both, C1 only in the reference, C6 only in the input, and C8 in neither.
+C2 and C1 are what pull the values apart. C2 is in the reference and nowhere else, a limit of the task, so it lowers the ceiling and no model could write it. C1 is in the reference and the generation but not the input, an untraced match, so utilization counts it and capture does not. On the generated side, the four concepts cover every combination of input and reference: C5 is in both, C1 only in the reference, C6 only in the input, and C8 in neither.
 
 ##### Deriving everything else
 

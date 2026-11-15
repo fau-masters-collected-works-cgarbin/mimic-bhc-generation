@@ -94,8 +94,8 @@ def reference_cuis(bundle: AdmissionBundle, extractor: ConceptExtractor) -> froz
 def admission_input_coverage(
     bundle: AdmissionBundle, extractor: ConceptExtractor
 ) -> InputCoverage | None:
-    """The input-coverage ceiling for one admission: the largest share of the
-    reference summary's concepts a model could recover from this input.
+    """The input-coverage ceiling for one admission: the share of the reference
+    summary's concepts the extractor found in this input, the recoverable concepts.
     """
     attributed = attribute_records(bundle, extractor)
     input_cuis = frozenset().union(*(ar.cui_set for ar in attributed))

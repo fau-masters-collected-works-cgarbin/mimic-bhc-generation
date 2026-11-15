@@ -2,7 +2,7 @@
 
 The ceiling is the share of reference concepts present in the assembled model
 input. It bounds achievable concept recall for almost every admission, but it
-is not a hard limit: a model can still produce a concept the extractor did not
+is not a hard limit: a model can still generate a concept the extractor did not
 find in the input, by inference or by wording that links where the raw input
 did not. Recall reads above the ceiling for some admissions.
 
@@ -86,7 +86,10 @@ class GeneratedPartition:
     """One admission's generated concepts split by input and reference membership.
 
     Field names read ``<input membership>_<reference membership>``. The four are
-    disjoint and their union is the generated set.
+    disjoint and their union is the generated set. In the coverage framework's
+    cell names, they are the recovered set (``in_input_in_ref``), the untraced
+    match (``not_input_in_ref``), over-inclusion (``in_input_not_ref``), and
+    unsupported (``not_input_not_ref``).
 
     ``in_input_in_ref`` and ``not_input_in_ref`` are precision's numerator.
 

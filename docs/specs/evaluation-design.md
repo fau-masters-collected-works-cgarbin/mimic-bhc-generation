@@ -75,7 +75,7 @@ Scoring has no checkpoint or resume. The same generated text, reference text, an
 
 ## The input-coverage ceiling
 
-The ceiling is the share of the reference summary's concepts present in the assembled model input. It bounds concept recall for almost every admission. A model can still produce a concept the extractor did not find in the input, by inference or by wording that links where the raw input did not.
+The ceiling is the share of the reference summary's concepts present in the assembled model input. It bounds concept recall for almost every admission. A model can still generate a concept the extractor did not find in the input, by inference or by wording that links where the raw input did not.
 
 Two functions compute it:
 
