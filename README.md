@@ -4,6 +4,18 @@ Experiment infrastructure for Brief Hospital Course (BHC) generation from [MIMIC
 
 This project uses small open-weight models (Gemma 4 E4B, Qwen3.5-4B, and Llama 3.2 3B, 4-bit quantized) for on-device BHC generation. It generates BHCs for admission ranging from 4K to 112K input tokens to test how the models perform with small and long contexts.
 
+## Contents
+
+- [Setup](#setup)
+- [Usage](#usage)
+  - [Verify prerequisites and run tests](#0-verify-prerequisites-and-run-tests)
+  - [Create the experiment cohort](#1-create-the-experiment-cohort)
+  - [Prepare](#2-prepare-the-frozen-inputs) and [spot-check](#3-spot-check-the-frozen-inputs) the experiments inputs
+  - [Run experiments](#4-run-experiments) and [analyze results](#5-view-experiment-results)
+- [Codebase structure](#codebase-structure)
+  - [Cohort creation](#cohort-creation) and [input preparation](#input-preparation)
+  - [Experiment pipeline](#experiment-pipeline) abd [results analysis](#results-analysis)
+
 ## Setup
 
 See [docs/setup.md](docs/setup.md). The setup was tested only on an Apple Silicon Mac: the llama.cpp download and the locked `nmslib` wheel are macOS builds.
@@ -454,7 +466,7 @@ Each cohort file has two parts. `admissions` has one entry per admission: its ha
 
 That second part is what lets a cohort trace back to its inputs without re-running the sampler. Cohort files live in the sibling repo `phd-dissertation-experiment-results` (see [Prerequisites](docs/setup.md#prerequisites)).
 
-### Preparation
+### Input Preparation
 
 The stage between cohort and experiments. It writes the three artifacts every consumer reads. See [docs/specs/preparation-design.md](docs/specs/preparation-design.md) for the prepare-once rule, the artifact names, and the consumer contract.
 
